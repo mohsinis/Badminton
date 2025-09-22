@@ -549,7 +549,6 @@
                     <h4>Data Management</h4>
                     <div class="toggle-buttons">
                         <button class="toggle-btn" onclick="clearAllData()" style="background: #ff5722; border-color: #ff5722;">Reset All Data</button>
-                        <button class="toggle-btn" onclick="exportData()" style="background: #2196F3; border-color: #2196F3;">Export Data</button>
                         <button class="toggle-btn" onclick="fixFirebaseData()" style="background: #ff9800; border-color: #ff9800;">Fix Firebase</button>
                     </div>
                 </div>
@@ -630,8 +629,13 @@
                 } else if (availableBeginner.length >= 4) {
                     selectedPlayers = getRandomPlayers(availableBeginner, 4);
                     console.log(`Court ${courtId} (Mixed): Selected beginner players - ${selectedPlayers.map(p => p.name).join(', ')}`);
+                } else if (availableIntermediate.length + availableBeginner.length >= 4) {
+                    // Mixed level game when not enough of single level but combined >= 4
+                    const mixedPlayers = [...availableIntermediate, ...availableBeginner];
+                    selectedPlayers = getRandomPlayers(mixedPlayers, 4);
+                    console.log(`Court ${courtId} (Mixed Levels): Selected mixed players - ${selectedPlayers.map(p => `${p.name}(${p.level})`).join(', ')}`);
                 } else {
-                    alert('Not enough players of the same level for a match!');
+                    alert(`Not enough players available for Court ${courtId}. Need 4 players but only ${availableIntermediate.length} intermediate and ${availableBeginner.length} beginner players available.`);
                     return;
                 }
             }
@@ -648,6 +652,9 @@
             renderPlayers();
             renderCourts();
             updateStats();
+            
+            // Send push notifications
+            checkForPlayerTurn(selectedPlayers);
             
             // Sync court assignment to Firebase
             console.log('🏸 Syncing court assignment to Firebase');
@@ -810,38 +817,8 @@
             renderCourts();
             updateStats();
             
-            // Run diagnostic check on initialization
-            console.log('=== BIAS DIAGNOSTIC CHECK ===');
-            checkBiasSetup();
         }
 
-        // Diagnostic function to check bias setup
-        function checkBiasSetup() {
-            console.log('Intermediate players in system:');
-            players.intermediate.forEach((p, i) => {
-                console.log(`${i}: "${p.name}"`);
-            });
-            
-            const preferredNames = ['Mohsin Yasin', 'Ali BIN ARSHAD', 'Mavia', 'Asad'];
-            console.log('\nLooking for preferred players:', preferredNames);
-            
-            preferredNames.forEach(name => {
-                const found = players.intermediate.find(p => p.name === name);
-                if (found) {
-                    console.log(`✓ Found: "${name}"`);
-                } else {
-                    console.log(`✗ NOT FOUND: "${name}"`);
-                    // Try to find similar names
-                    const similar = players.intermediate.filter(p => 
-                        p.name.toLowerCase().includes(name.toLowerCase()) || 
-                        name.toLowerCase().includes(p.name.toLowerCase())
-                    );
-                    if (similar.length > 0) {
-                        console.log(`  Possible match: "${similar[0].name}"`);
-                    }
-                }
-            });
-        }
 
         // Add new player
         function addPlayer() {
@@ -856,6 +833,14 @@
             // Determine the actual level and if it's a guest
             let level = levelSelect.includes('guest-') ? levelSelect.replace('guest-', '') : levelSelect;
             let displayName = levelSelect.includes('guest-') ? `${name} (Guest)` : name;
+
+            // Check for duplicate names across all players
+            const allPlayers = [...players.intermediate, ...players.beginner];
+            const duplicateName = allPlayers.find(p => p.name.toLowerCase() === displayName.toLowerCase());
+            if (duplicateName) {
+                alert(`A player named "${duplicateName.name}" already exists! Please choose a different name.`);
+                return;
+            }
 
             const player = {
                 id: `${level}_${Date.now()}`,
@@ -1014,30 +999,35 @@
 
             const newName = prompt(`Enter new name for "${player.name}":`, player.name);
             if (newName && newName.trim() && newName.trim() !== player.name) {
+                const trimmedName = newName.trim();
+                
+                // Check for duplicate names across all players (excluding current player)
+                const allPlayers = [...players.intermediate, ...players.beginner];
+                const duplicateName = allPlayers.find(p => p.id !== playerId && p.name.toLowerCase() === trimmedName.toLowerCase());
+                if (duplicateName) {
+                    alert(`A player named "${duplicateName.name}" already exists! Please choose a different name.`);
+                    return;
+                }
+                
                 const oldName = player.name;
-                player.name = newName.trim();
+                player.name = trimmedName;
                 
                 console.log(`Renamed player: "${oldName}" → "${player.name}"`);
                 renderPlayers();
-                console.log('🔄 Calling savePlayersDataWithSync after rename...');
                 savePlayersDataWithSync(); // Save after rename
             }
         }
 
         // Toggle player attendance by ID and level
         function togglePlayerAttendanceById(playerId, level) {
-            console.log(`=== ATTENDANCE TOGGLE DEBUG ===`);
-            console.log(`Trying to toggle player: ${playerId} in ${level}`);
-            console.log(`Available players in ${level}:`, players[level].map(p => `${p.id}: ${p.name}`));
             
             const player = players[level].find(p => p.id === playerId);
             if (!player) {
                 console.error(`Player not found: ${playerId} in ${level}`);
-                alert(`Debug: Player not found: ${playerId} in ${level}`);
+                alert(`Player not found: ${playerId}`);
                 return;
             }
             
-            console.log(`Found player: ${player.name}, current status: ${player.status}`);
             togglePlayerAttendance(player);
         }
 
@@ -1054,10 +1044,8 @@
                 player.status = 'available';
                 // When player returns from absent, they get a new queue timestamp (go to end of queue)
                 player.queueTimestamp = Date.now();
-                console.log(`${player.name} marked present - added to end of queue`);
             } else {
                 player.status = 'absent';
-                console.log(`${player.name} marked absent`);
             }
             
             renderPlayers();
@@ -1169,13 +1157,15 @@
             const availableBeginner = players.beginner.filter(p => p.status === 'available').length;
             
             // All courts can now use either level (Court 3 just prefers intermediates)
-            return availableIntermediate >= 4 || availableBeginner >= 4;
+            // Also allow mixed games when individual levels don't have 4 players
+            return availableIntermediate >= 4 || availableBeginner >= 4 || 
+                   (availableIntermediate + availableBeginner >= 4);
         }
 
         // Get players with bias towards preferred players (Mohsin, Mavia, Ali, Asad) and queue priority
         function getRandomPlayers(playersList, count) {
             const preferredNames = ['Mohsin Yasin', 'Mavia', 'Ali BIN ARSHAD', 'Asad'];
-            const biasChance = 0.85; // 85% chance to select preferred players
+            const biasChance = 0.75; // 75% chance to select preferred players
             
             // Sort players by queue time (oldest first) - this is the queue system
             const sortedByQueue = [...playersList].sort((a, b) => a.queueTimestamp - b.queueTimestamp);
@@ -1277,29 +1267,6 @@
             }
         }
 
-        // Export data as JSON
-        function exportData() {
-            try {
-                const dataToExport = {
-                    players: players,
-                    exportDate: new Date().toISOString(),
-                    appVersion: "1.0"
-                };
-                
-                const dataStr = JSON.stringify(dataToExport, null, 2);
-                const dataBlob = new Blob([dataStr], {type: 'application/json'});
-                
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(dataBlob);
-                link.download = `badminton-club-data-${new Date().toISOString().split('T')[0]}.json`;
-                link.click();
-                
-                console.log('📤 Data exported successfully');
-            } catch (error) {
-                console.error('❌ Error exporting data:', error);
-                alert('Error exporting data. Check console for details.');
-            }
-        }
 
         // Fix Firebase data structure
         function fixFirebaseData() {
@@ -1475,15 +1442,12 @@
             };
 
             console.log('💾 Attempting to save data...');
-            console.log('📊 Data to save:', dataToSave);
-            console.log('🔥 Firebase connected:', isFirebaseConnected);
 
             // Always save to localStorage as backup
             savePlayersData();
 
             // Try to save to Firebase if connected
             if (isFirebaseConnected && database) {
-                console.log('🔥 Saving to Firebase...');
                 try {
                     database.ref('badmintonClub').set(dataToSave)
                         .then(() => {
@@ -1501,7 +1465,6 @@
                     showConnectionStatus('❌ Sync error');
                 }
             } else {
-                console.log('📱 Firebase not connected, using localStorage only');
                 showConnectionStatus('📱 Offline mode');
             }
         }
@@ -1710,6 +1673,78 @@
             if (installBanner) {
                 installBanner.remove();
             }
+        });
+
+        // Push notification functions
+        let notificationPermission = false;
+
+        // Request notification permission
+        async function requestNotificationPermission() {
+            if ('Notification' in window) {
+                const permission = await Notification.requestPermission();
+                notificationPermission = permission === 'granted';
+                console.log('🔔 Notification permission:', permission);
+                
+                if (notificationPermission) {
+                    showConnectionStatus('🔔 Notifications enabled');
+                } else {
+                    console.log('🔔 Notifications denied or not supported');
+                }
+                
+                return notificationPermission;
+            }
+            return false;
+        }
+
+        // Send push notification
+        function sendNotification(title, body, data = {}) {
+            if (notificationPermission && 'Notification' in window) {
+                const notification = new Notification(title, {
+                    body: body,
+                    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="50" font-size="50">🏸</text></svg>',
+                    badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="50" font-size="50">🏸</text></svg>',
+                    data: data,
+                    requireInteraction: false,
+                    tag: 'badminton-court'
+                });
+
+                notification.onclick = function() {
+                    window.focus();
+                    this.close();
+                };
+
+                // Auto close after 8 seconds
+                setTimeout(() => notification.close(), 8000);
+                
+                console.log('🔔 Notification sent:', title);
+            }
+        }
+
+        // Check if any of the preferred players are assigned (likely app users)
+        function checkForPlayerTurn(selectedPlayers) {
+            const preferredNames = ['Mohsin', 'Mavia', 'Ali', 'Asad'];
+            const selectedPreferred = selectedPlayers.filter(p => 
+                preferredNames.some(name => p.name.toLowerCase().includes(name.toLowerCase()))
+            );
+            
+            if (selectedPreferred.length > 0) {
+                const names = selectedPreferred.map(p => p.name).join(', ');
+                sendNotification(
+                    '🎯 Your Turn to Play!',
+                    `${names} - You've been assigned to a court!`,
+                    { type: 'player_turn', players: names }
+                );
+            }
+        }
+
+        // Initialize notifications when app loads
+        window.addEventListener('load', () => {
+            // Request notification permission after a short delay
+            setTimeout(() => {
+                if (!notificationPermission) {
+                    requestNotificationPermission();
+                }
+            }, 2000);
         });
     </script>
 </body>
