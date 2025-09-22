@@ -550,6 +550,7 @@
                     <div class="toggle-buttons">
                         <button class="toggle-btn" onclick="clearAllData()" style="background: #ff5722; border-color: #ff5722;">Reset All Data</button>
                         <button class="toggle-btn" onclick="exportData()" style="background: #2196F3; border-color: #2196F3;">Export Data</button>
+                        <button class="toggle-btn" onclick="fixFirebaseData()" style="background: #ff9800; border-color: #ff9800;">Fix Firebase</button>
                     </div>
                 </div>
 
@@ -1292,6 +1293,38 @@
             }
         }
 
+        // Fix Firebase data structure
+        function fixFirebaseData() {
+            if (!isFirebaseConnected) {
+                alert('❌ Firebase not connected. Cannot fix data.');
+                return;
+            }
+
+            const confirmFix = confirm('🔧 This will clear corrupted Firebase data and upload fresh player data. Continue?');
+            if (confirmFix) {
+                console.log('🔧 Fixing Firebase data structure...');
+                
+                // Clear corrupted Firebase data first
+                database.ref('badmintonClub').remove()
+                    .then(() => {
+                        console.log('🗑️ Cleared corrupted Firebase data');
+                        
+                        // Reset local data to defaults
+                        players.intermediate = [];
+                        players.beginner = [];
+                        
+                        // Initialize with fresh default data
+                        initializePlayers();
+                        
+                        alert('✅ Firebase data fixed! Try renaming a player now.');
+                    })
+                    .catch((error) => {
+                        console.error('❌ Failed to clear Firebase data:', error);
+                        alert('❌ Failed to fix Firebase data: ' + error.message);
+                    });
+            }
+        }
+
         // Update statistics
         function updateStats() {
             const totalPresent = players.intermediate.filter(p => p.status !== 'absent').length + 
@@ -1461,58 +1494,87 @@
                 return;
             }
 
+            console.log('📂 Attempting to load data from Firebase...');
             database.ref('badmintonClub').once('value')
                 .then((snapshot) => {
+                    console.log('📊 Firebase snapshot received:', snapshot.exists());
+                    
                     if (snapshot.exists()) {
                         const firebaseData = snapshot.val();
-                        if (firebaseData.players) {
-                            console.log('📂 Loading data from Firebase');
+                        console.log('📊 Raw Firebase data:', firebaseData);
+                        
+                        if (firebaseData && firebaseData.players) {
+                            console.log('📂 Valid Firebase data found, loading...');
                             updateLocalDataFromFirebase(firebaseData);
-                            isInitializing = false;
-                            return;
+                        } else {
+                            console.log('⚠️ Firebase data exists but no valid players structure');
+                            // Initialize with default data and save to Firebase
+                            initializePlayers();
                         }
+                    } else {
+                        console.log('📂 No Firebase data exists, initializing defaults');
+                        // No Firebase data, initialize with defaults
+                        initializePlayers();
                     }
                     
-                    // No Firebase data, use localStorage or defaults
-                    console.log('📂 No Firebase data, loading from localStorage');
                     isInitializing = false;
                 })
                 .catch((error) => {
                     console.error('❌ Firebase load failed:', error);
+                    console.log('📂 Falling back to localStorage/defaults');
+                    initializePlayers();
                     isInitializing = false;
                 });
         }
 
         // Update local data from Firebase
         function updateLocalDataFromFirebase(firebaseData) {
-            if (firebaseData.players) {
-                players = firebaseData.players;
+            console.log('🔄 updateLocalDataFromFirebase called with:', firebaseData);
+            
+            if (firebaseData && firebaseData.players) {
+                console.log('📊 Firebase players data:', firebaseData.players);
                 
-                // Reset all courts (don't sync games across sessions)
-                courts.forEach(court => {
-                    court.occupied = false;
-                    court.players = [];
-                });
-                
-                // Reset playing status
-                players.intermediate.forEach(player => {
-                    if (player.status === 'playing') {
-                        player.status = 'available';
+                // Ensure players object has the correct structure
+                if (firebaseData.players.intermediate && firebaseData.players.beginner) {
+                    players = firebaseData.players;
+                    
+                    // Reset all courts (don't sync games across sessions)
+                    courts.forEach(court => {
+                        court.occupied = false;
+                        court.players = [];
+                    });
+                    
+                    // Reset playing status - with safety checks
+                    if (players.intermediate && Array.isArray(players.intermediate)) {
+                        players.intermediate.forEach(player => {
+                            if (player.status === 'playing') {
+                                player.status = 'available';
+                            }
+                        });
                     }
-                });
-                players.beginner.forEach(player => {
-                    if (player.status === 'playing') {
-                        player.status = 'available';
+                    
+                    if (players.beginner && Array.isArray(players.beginner)) {
+                        players.beginner.forEach(player => {
+                            if (player.status === 'playing') {
+                                player.status = 'available';
+                            }
+                        });
                     }
-                });
-                
-                // Update UI
-                renderPlayers();
-                renderCourts();
-                updateStats();
-                
-                // Save to localStorage as backup
-                savePlayersData();
+                    
+                    console.log('✅ Successfully updated local data from Firebase');
+                    
+                    // Update UI
+                    renderPlayers();
+                    renderCourts();
+                    updateStats();
+                    
+                    // Save to localStorage as backup
+                    savePlayersData();
+                } else {
+                    console.error('❌ Invalid Firebase data structure:', firebaseData.players);
+                }
+            } else {
+                console.log('⚠️ No valid players data in Firebase response');
             }
         }
 
