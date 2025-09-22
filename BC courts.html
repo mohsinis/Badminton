@@ -1308,6 +1308,7 @@
         let database = null;
         let isFirebaseConnected = false;
         let isInitializing = true;
+        let currentUserId = 'user-' + Math.random().toString(36).substr(2, 9); // Unique user ID for this session
 
         // Firebase configuration - Shingwàkons PS Badminton Club
         const firebaseConfig = {
@@ -1357,8 +1358,15 @@
                     if (!isInitializing && snapshot.exists()) {
                         const firebaseData = snapshot.val();
                         if (firebaseData && firebaseData.players) {
-                            console.log('🔄 Received real-time update from Firebase');
-                            updateLocalDataFromFirebase(firebaseData);
+                            // Only update if this change came from another user
+                            if (firebaseData.updatedBy !== currentUserId) {
+                                console.log('🔄 Received real-time update from another user');
+                                console.log('📊 Firebase data:', firebaseData);
+                                updateLocalDataFromFirebase(firebaseData);
+                                showConnectionStatus('🔄 Data updated');
+                            } else {
+                                console.log('📝 Ignoring own update');
+                            }
                         }
                     }
                 });
@@ -1410,25 +1418,38 @@
             const dataToSave = {
                 players: players,
                 lastUpdated: Date.now(),
-                updatedBy: 'user-' + Math.random().toString(36).substr(2, 9)
+                updatedBy: currentUserId
             };
+
+            console.log('💾 Attempting to save data...');
+            console.log('📊 Data to save:', dataToSave);
+            console.log('🔥 Firebase connected:', isFirebaseConnected);
 
             // Always save to localStorage as backup
             savePlayersData();
 
             // Try to save to Firebase if connected
             if (isFirebaseConnected && database) {
+                console.log('🔥 Saving to Firebase...');
                 try {
                     database.ref('badmintonClub').set(dataToSave)
                         .then(() => {
-                            console.log('✅ Data synced to Firebase');
+                            console.log('✅ Data successfully synced to Firebase');
+                            showConnectionStatus('✅ Data synced');
                         })
                         .catch((error) => {
                             console.error('❌ Firebase save failed:', error);
+                            console.error('Error details:', error.code, error.message);
+                            showConnectionStatus('❌ Sync failed');
+                            alert('Firebase save failed: ' + error.message);
                         });
                 } catch (error) {
                     console.error('❌ Firebase save error:', error);
+                    showConnectionStatus('❌ Sync error');
                 }
+            } else {
+                console.log('📱 Firebase not connected, using localStorage only');
+                showConnectionStatus('📱 Offline mode');
             }
         }
 

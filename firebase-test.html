@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Firebase Connection Test</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+</head>
+<body>
+    <h1>Firebase Connection Test</h1>
+    <div id="status">Testing connection...</div>
+    <button onclick="testWrite()">Test Write</button>
+    <button onclick="testRead()">Test Read</button>
+    <div id="output"></div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCcW9gyRlIDGxLdqNIt5hZN5pQOzsjWSsU",
+            authDomain: "shingwakons-badminton-club.firebaseapp.com",
+            databaseURL: "https://shingwakons-badminton-club-default-rtdb.firebaseio.com/",
+            projectId: "shingwakons-badminton-club",
+            storageBucket: "shingwakons-badminton-club.firebasestorage.app",
+            messagingSenderId: "37974035469",
+            appId: "1:37974035469:web:f8809c731372c5da005944"
+        };
+
+        let app, database;
+        
+        try {
+            app = firebase.initializeApp(firebaseConfig);
+            database = firebase.database();
+            document.getElementById('status').innerHTML = '✅ Firebase initialized successfully';
+            
+            // Test connection
+            database.ref('.info/connected').on('value', (snapshot) => {
+                if (snapshot.val() === true) {
+                    document.getElementById('status').innerHTML = '✅ Firebase connected and ready';
+                } else {
+                    document.getElementById('status').innerHTML = '❌ Firebase disconnected';
+                }
+            });
+            
+        } catch (error) {
+            document.getElementById('status').innerHTML = '❌ Firebase initialization failed: ' + error.message;
+            console.error('Firebase error:', error);
+        }
+
+        function testWrite() {
+            const testData = {
+                test: true,
+                timestamp: Date.now(),
+                message: 'Test write from firebase-test.html'
+            };
+            
+            document.getElementById('output').innerHTML = 'Writing test data...';
+            
+            database.ref('test').set(testData)
+                .then(() => {
+                    document.getElementById('output').innerHTML = '✅ Test write successful!';
+                    console.log('Write successful');
+                })
+                .catch((error) => {
+                    document.getElementById('output').innerHTML = '❌ Test write failed: ' + error.message;
+                    console.error('Write failed:', error);
+                });
+        }
+
+        function testRead() {
+            document.getElementById('output').innerHTML = 'Reading test data...';
+            
+            database.ref('test').once('value')
+                .then((snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        document.getElementById('output').innerHTML = '✅ Test read successful: ' + JSON.stringify(data);
+                        console.log('Read successful:', data);
+                    } else {
+                        document.getElementById('output').innerHTML = '📭 No test data found';
+                    }
+                })
+                .catch((error) => {
+                    document.getElementById('output').innerHTML = '❌ Test read failed: ' + error.message;
+                    console.error('Read failed:', error);
+                });
+        }
+    </script>
+</body>
+</html>
