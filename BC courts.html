@@ -648,6 +648,10 @@
             renderPlayers();
             renderCourts();
             updateStats();
+            
+            // Sync court assignment to Firebase
+            console.log('🏸 Syncing court assignment to Firebase');
+            savePlayersDataWithSync();
 
             // Switch to courts tab on mobile after assigning
             if (isMobile()) {
@@ -1234,6 +1238,10 @@
             renderPlayers();
             renderCourts();
             updateStats();
+            
+            // Sync court end game to Firebase
+            console.log('🏸 Syncing court end game to Firebase');
+            savePlayersDataWithSync();
 
             // Auto-assign next match if players are waiting
             setTimeout(() => {
@@ -1396,8 +1404,18 @@
                             if (firebaseData.updatedBy !== currentUserId) {
                                 console.log('🔄 Received real-time update from another user');
                                 console.log('📊 Firebase data:', firebaseData);
+                                
+                                // Check if courts changed
+                                const courtsChanged = firebaseData.courts && 
+                                    JSON.stringify(firebaseData.courts) !== JSON.stringify(courts);
+                                
                                 updateLocalDataFromFirebase(firebaseData);
-                                showConnectionStatus('🔄 Data updated');
+                                
+                                if (courtsChanged) {
+                                    showConnectionStatus('🏸 Courts updated');
+                                } else {
+                                    showConnectionStatus('🔄 Data updated');
+                                }
                             } else {
                                 console.log('📝 Ignoring own update');
                             }
@@ -1451,6 +1469,7 @@
         function saveDataToFirebase() {
             const dataToSave = {
                 players: players,
+                courts: courts, // Add courts to Firebase sync
                 lastUpdated: Date.now(),
                 updatedBy: currentUserId
             };
@@ -1538,27 +1557,12 @@
                 if (firebaseData.players.intermediate && firebaseData.players.beginner) {
                     players = firebaseData.players;
                     
-                    // Reset all courts (don't sync games across sessions)
-                    courts.forEach(court => {
-                        court.occupied = false;
-                        court.players = [];
-                    });
-                    
-                    // Reset playing status - with safety checks
-                    if (players.intermediate && Array.isArray(players.intermediate)) {
-                        players.intermediate.forEach(player => {
-                            if (player.status === 'playing') {
-                                player.status = 'available';
-                            }
-                        });
-                    }
-                    
-                    if (players.beginner && Array.isArray(players.beginner)) {
-                        players.beginner.forEach(player => {
-                            if (player.status === 'playing') {
-                                player.status = 'available';
-                            }
-                        });
+                    // Update courts from Firebase if available
+                    if (firebaseData.courts && Array.isArray(firebaseData.courts)) {
+                        console.log('🏸 Syncing court data from Firebase');
+                        courts = firebaseData.courts;
+                    } else {
+                        console.log('🏸 No court data in Firebase, keeping local courts');
                     }
                     
                     console.log('✅ Successfully updated local data from Firebase');
