@@ -1014,6 +1014,7 @@
                 
                 console.log(`Renamed player: "${oldName}" → "${player.name}"`);
                 renderPlayers();
+                console.log('🔄 Calling savePlayersDataWithSync after rename...');
                 savePlayersDataWithSync(); // Save after rename
             }
         }
@@ -1517,9 +1518,15 @@
 
         // Modified save function that uses Firebase
         function savePlayersDataWithSync() {
+            console.log('🔄 savePlayersDataWithSync called');
+            console.log('🔥 Firebase connected status:', isFirebaseConnected);
+            console.log('📊 Current players data:', players);
+            
             if (isFirebaseConnected) {
+                console.log('✅ Using Firebase sync');
                 saveDataToFirebase();
             } else {
+                console.log('📱 Using localStorage only (Firebase not connected)');
                 savePlayersData(); // Fallback to localStorage only
             }
         }
@@ -1528,7 +1535,9 @@
         console.log('🚀 Initializing Badminton Court Manager...');
         
         // Initialize Firebase first
-        initializeFirebase();
+        console.log('🔥 Starting Firebase initialization...');
+        const firebaseInitResult = initializeFirebase();
+        console.log('🔥 Firebase init result:', firebaseInitResult);
         
         // Initialize players (will load from Firebase if available, otherwise localStorage/defaults)
         setTimeout(() => {
