@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shingwàkons PS Badminton Club</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Court management system for Shingwàkons PS Badminton Club">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Badminton Club">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Badminton Club">
+    
+    <!-- PWA Icons for iOS -->
+    <link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='40' fill='%23667eea'/%3E%3Ctext x='50' y='60' font-size='40' text-anchor='middle' fill='white'%3E🏸%3C/text%3E%3C/svg%3E">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="./manifest.json">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='40' fill='%23667eea'/%3E%3Ctext x='50' y='60' font-size='40' text-anchor='middle' fill='white'%3E🏸%3C/text%3E%3C/svg%3E">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 1.8em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.2);
+            padding: 10px 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            color: white;
+            font-size: 0.9em;
+            flex: 1;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .mobile-tabs {
+            display: none;
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+
+        .tab-buttons {
+            display: flex;
+            width: 100%;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: #f5f5f5;
+            color: #666;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 5px;
+            }
+
+            .header h1 {
+                font-size: 1.5em;
+            }
+
+            .stats {
+                gap: 5px;
+            }
+
+            .stat-card {
+                padding: 8px 10px;
+                font-size: 0.8em;
+            }
+
+            .mobile-tabs {
+                display: block;
+            }
+
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .players-section {
+                display: none;
+            }
+
+            .players-section.active {
+                display: block;
+            }
+
+            .courts-section {
+                display: none;
+            }
+
+            .courts-section.active {
+                display: grid;
+            }
+        }
+
+        .players-section {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        @media (max-width: 768px) {
+            .players-section {
+                max-height: calc(100vh - 250px);
+                padding: 12px;
+            }
+        }
+
+        .players-section h2 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.3em;
+        }
+
+        .player-group {
+            margin-bottom: 20px;
+        }
+
+        .player-group h3 {
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        .player-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .player-item {
+            padding: 8px 10px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+
+        .player-item.available {
+            background: #e8f5e9;
+            border: 1px solid #4caf50;
+        }
+
+        .player-item.playing {
+            background: #fff3e0;
+            border: 1px solid #ff9800;
+        }
+
+        .player-item.absent {
+            background: #ffebee;
+            border: 1px solid #f44336;
+            opacity: 0.6;
+            text-decoration: line-through;
+        }
+
+        .player-controls {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .level-toggle {
+            padding: 2px 6px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.7em;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .level-toggle:hover {
+            background: #1976D2;
+        }
+
+        .level-toggle:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .player-status {
+            font-size: 0.75em;
+            padding: 2px 6px;
+            border-radius: 12px;
+            background: white;
+            text-transform: capitalize;
+        }
+
+        .attendance-toggle {
+            margin-bottom: 15px;
+            padding: 12px;
+            background: #f0f0f0;
+            border-radius: 10px;
+        }
+
+        .attendance-toggle h4 {
+            margin-bottom: 8px;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .toggle-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .toggle-btn {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 5px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .toggle-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .toggle-btn.mark-all {
+            background: #4caf50;
+            color: white;
+            border-color: #4caf50;
+        }
+
+        .toggle-btn.mark-absent {
+            background: #f44336;
+            color: white;
+            border-color: #f44336;
+        }
+
+        .courts-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .courts-section {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+        }
+
+        .court-card {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }
+
+        @media (min-width: 769px) {
+            .court-card:hover {
+                transform: translateY(-5px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .court-card {
+                padding: 12px;
+            }
+        }
+
+        .court-header {
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .court-number {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.95em;
+        }
+
+        .court-status {
+            text-align: center;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .court-status.empty {
+            background: #f5f5f5;
+            color: #999;
+        }
+
+        .court-status.occupied {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .players-on-court {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .player-on-court {
+            padding: 8px;
+            background: #f0f4ff;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 0.9em;
+        }
+
+        .player-on-court.intermediate {
+            background: #fff3e0;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-end {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-end:hover {
+            background: #d32f2f;
+        }
+
+        .btn-assign {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-assign:hover {
+            background: #45a049;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .queue-info {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .add-player-form {
+            margin-bottom: 15px;
+            padding: 12px;
+            background: #f9f9f9;
+            border-radius: 10px;
+        }
+
+        .form-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .form-group input {
+            flex: 1;
+            min-width: 150px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        .form-group select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .add-player-form {
+                padding: 10px;
+            }
+
+            .form-group {
+                flex-direction: column;
+            }
+
+            .form-group input,
+            .form-group select {
+                width: 100%;
+            }
+        }
+
+        /* Touch-friendly buttons for mobile */
+        @media (max-width: 768px) {
+            .btn {
+                padding: 12px;
+                font-size: 0.95em;
+                -webkit-tap-highlight-color: transparent;
+            }
+        }
+
+        /* Improve scrolling on mobile */
+        @media (max-width: 768px) {
+            .players-section,
+            .courts-section {
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+
+        /* Loading indicator for better UX */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏸 Shingwàkons PS Badminton Club</h1>
+            <div class="stats">
+                <div class="stat-card">
+                    <strong>Total Players:</strong> <span id="totalPlayers">34</span>
+                </div>
+                <div class="stat-card">
+                    <strong>Available Courts:</strong> <span id="availableCourts">4</span>
+                </div>
+                <div class="stat-card">
+                    <strong>Active Games:</strong> <span id="activeGames">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="mobile-tabs">
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="switchTab('players')">Players</button>
+                <button class="tab-btn" onclick="switchTab('courts')">Courts</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="players-section active" id="playersSection">
+                <h2>Players Management</h2>
+                
+                <div class="add-player-form">
+                    <div class="form-group">
+                        <input type="text" id="newPlayerName" placeholder="Player name (or Guest 1, Guest 2, etc.)">
+                        <select id="newPlayerLevel">
+                            <option value="beginner">Beginner</option>
+                            <option value="intermediate">Intermediate</option>
+                            <option value="guest-beginner">Guest (Beginner)</option>
+                            <option value="guest-intermediate">Guest (Intermediate)</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-assign" onclick="addPlayer()">Add Player</button>
+                </div>
+
+                <div class="attendance-toggle">
+                    <h4>Quick Attendance Actions</h4>
+                    <div class="toggle-buttons">
+                        <button class="toggle-btn mark-all" onclick="markAllPresent()">Mark All Present</button>
+                        <button class="toggle-btn mark-absent" onclick="markAllAbsent()">Mark All Absent</button>
+                    </div>
+                </div>
+
+                <div class="player-group">
+                    <h3>Intermediate Players (<span id="intermediateCount">10</span>)</h3>
+                    <p style="font-size: 0.8em; color: #666; margin-bottom: 8px;">Click on a player to toggle attendance</p>
+                    <div class="player-list" id="intermediatePlayers"></div>
+                </div>
+
+                <div class="player-group">
+                    <h3>Beginner Players (<span id="beginnerCount">24</span>)</h3>
+                    <p style="font-size: 0.8em; color: #666; margin-bottom: 8px;">Click on a player to toggle attendance</p>
+                    <div class="player-list" id="beginnerPlayers"></div>
+                </div>
+            </div>
+
+            <div class="courts-section" id="courtsSection">
+                <!-- Courts will be dynamically generated -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching for mobile
+        function switchTab(tab) {
+            const playersSection = document.getElementById('playersSection');
+            const courtsSection = document.getElementById('courtsSection');
+            const tabButtons = document.querySelectorAll('.tab-btn');
+
+            if (tab === 'players') {
+                playersSection.classList.add('active');
+                courtsSection.classList.remove('active');
+                tabButtons[0].classList.add('active');
+                tabButtons[1].classList.remove('active');
+            } else {
+                playersSection.classList.remove('active');
+                courtsSection.classList.add('active');
+                tabButtons[0].classList.remove('active');
+                tabButtons[1].classList.add('active');
+            }
+        }
+
+        // Check if mobile
+        function isMobile() {
+            return window.innerWidth <= 768;
+        }
+
+        // Auto switch to courts tab on mobile when assigning
+        function assignPlayers(courtId) {
+            const court = courts.find(c => c.id === courtId);
+            if (court.occupied) return;
+
+            const availableIntermediate = players.intermediate.filter(p => p.status === 'available');
+            const availableBeginner = players.beginner.filter(p => p.status === 'available');
+
+            let selectedPlayers = [];
+
+            // Court 3 PREFERS intermediate players but allows beginners if no intermediates available
+            if (courtId === 3) {
+                if (availableIntermediate.length >= 4) {
+                    selectedPlayers = getRandomPlayers(availableIntermediate, 4);
+                    console.log(`Court 3 (Preferred Intermediate): Selected intermediate players - ${selectedPlayers.map(p => p.name).join(', ')}`);
+                } else if (availableBeginner.length >= 4) {
+                    selectedPlayers = getRandomPlayers(availableBeginner, 4);
+                    console.log(`Court 3 (Fallback to Beginner): No intermediates available, selected beginner players - ${selectedPlayers.map(p => p.name).join(', ')}`);
+                } else {
+                    alert(`Not enough players available for Court 3. Need 4 players but only ${availableIntermediate.length} intermediate and ${availableBeginner.length} beginner players available.`);
+                    return;
+                }
+            } 
+            // Courts 1, 2, and 4 are assigned based on availability
+            else {
+                // Prioritize intermediate players if we have 4 or more
+                if (availableIntermediate.length >= 4) {
+                    selectedPlayers = getRandomPlayers(availableIntermediate, 4);
+                    console.log(`Court ${courtId} (Mixed): Selected intermediate players - ${selectedPlayers.map(p => p.name).join(', ')}`);
+                } else if (availableBeginner.length >= 4) {
+                    selectedPlayers = getRandomPlayers(availableBeginner, 4);
+                    console.log(`Court ${courtId} (Mixed): Selected beginner players - ${selectedPlayers.map(p => p.name).join(', ')}`);
+                } else {
+                    alert('Not enough players of the same level for a match!');
+                    return;
+                }
+            }
+
+            // Update player status
+            selectedPlayers.forEach(player => {
+                player.status = 'playing';
+            });
+
+            // Update court
+            court.occupied = true;
+            court.players = selectedPlayers;
+
+            renderPlayers();
+            renderCourts();
+            updateStats();
+
+            // Switch to courts tab on mobile after assigning
+            if (isMobile()) {
+                setTimeout(() => switchTab('courts'), 100);
+            }
+        }
+
+        // Game state
+        let players = {
+            intermediate: [],
+            beginner: []
+        };
+
+        let courts = [
+            { id: 1, occupied: false, players: [] },
+            { id: 2, occupied: false, players: [] },
+            { id: 3, occupied: false, players: [] },
+            { id: 4, occupied: false, players: [] }
+        ];
+
+        // Initialize players
+        function initializePlayers() {
+            // Add intermediate players (10 players - updated)
+            const intermediatePlayerNames = [
+                'Mohsin Yasin',
+                'Awais',
+                'Shaheryar Afroze',
+                'Ali BIN ARSHAD',
+                'Arslan Rafiq',
+                'Asad',
+                'Hamid Jan',
+                'Mavia',
+                'Usman',
+                'Waqas'
+            ];
+
+            intermediatePlayerNames.forEach((name, index) => {
+                players.intermediate.push({
+                    id: `int${index + 1}`,
+                    name: name,
+                    status: 'available',
+                    level: 'intermediate',
+                    queueTimestamp: Date.now() // Track when they became available
+                });
+            });
+
+            // Add beginner players (24 players - updated with full phone numbers)
+            const beginnerPlayerNames = [
+                'Moid',
+                'Muhammad Khizar',
+                'HM',
+                '+1 (343) 988-0245',
+                '+1 (343) 999-2247',
+                '+1 (416) 319-3817',
+                '+1 (514) 995-8939',
+                '+1 (613) 298-5451',
+                '+1 (613) 299-3159',
+                '+1 (613) 413-4170',
+                '+1 (613) 413-5563',
+                '+1 (613) 513-4953',
+                '+1 (613) 600-2688',
+                '+1 (613) 761-0152',
+                '+1 (613) 864-1844',
+                '+1 (613) 890-4942',
+                '+1 (613) 890-9456',
+                '+1 (613) 914-8481',
+                '+1 (613) 986-5423',
+                '+1 (647) 760-1986',
+                '+1 (873) 288-4800',
+                '+1 (902) 989-4918',
+                '+1 (905) 462-7420',
+                'Guest Player'
+            ];
+
+            beginnerPlayerNames.forEach((name, index) => {
+                players.beginner.push({
+                    id: `beg${index + 1}`,
+                    name: name,
+                    status: 'available',
+                    level: 'beginner',
+                    queueTimestamp: Date.now() // Track when they became available
+                });
+            });
+
+            renderPlayers();
+            renderCourts();
+            updateStats();
+            
+            // Run diagnostic check on initialization
+            console.log('=== BIAS DIAGNOSTIC CHECK ===');
+            checkBiasSetup();
+        }
+
+        // Diagnostic function to check bias setup
+        function checkBiasSetup() {
+            console.log('Intermediate players in system:');
+            players.intermediate.forEach((p, i) => {
+                console.log(`${i}: "${p.name}"`);
+            });
+            
+            const preferredNames = ['Mohsin Yasin', 'Ali BIN ARSHAD', 'Mavia', 'Asad'];
+            console.log('\nLooking for preferred players:', preferredNames);
+            
+            preferredNames.forEach(name => {
+                const found = players.intermediate.find(p => p.name === name);
+                if (found) {
+                    console.log(`✓ Found: "${name}"`);
+                } else {
+                    console.log(`✗ NOT FOUND: "${name}"`);
+                    // Try to find similar names
+                    const similar = players.intermediate.filter(p => 
+                        p.name.toLowerCase().includes(name.toLowerCase()) || 
+                        name.toLowerCase().includes(p.name.toLowerCase())
+                    );
+                    if (similar.length > 0) {
+                        console.log(`  Possible match: "${similar[0].name}"`);
+                    }
+                }
+            });
+        }
+
+        // Add new player
+        function addPlayer() {
+            const name = document.getElementById('newPlayerName').value.trim();
+            const levelSelect = document.getElementById('newPlayerLevel').value;
+
+            if (!name) {
+                alert('Please enter a player name');
+                return;
+            }
+
+            // Determine the actual level and if it's a guest
+            let level = levelSelect.includes('guest-') ? levelSelect.replace('guest-', '') : levelSelect;
+            let displayName = levelSelect.includes('guest-') ? `${name} (Guest)` : name;
+
+            const player = {
+                id: `${level}_${Date.now()}`,
+                name: displayName,
+                status: 'available',
+                level: level,
+                isGuest: levelSelect.includes('guest-'),
+                queueTimestamp: Date.now() // New players go to end of queue
+            };
+
+            players[level].push(player);
+            
+            document.getElementById('newPlayerName').value = '';
+            
+            renderPlayers();
+            updateStats();
+        }
+
+        // Render players list
+        function renderPlayers() {
+            const intermediateContainer = document.getElementById('intermediatePlayers');
+            const beginnerContainer = document.getElementById('beginnerPlayers');
+
+            intermediateContainer.innerHTML = '';
+            beginnerContainer.innerHTML = '';
+
+            players.intermediate.forEach(player => {
+                intermediateContainer.appendChild(createPlayerElement(player));
+            });
+
+            players.beginner.forEach(player => {
+                beginnerContainer.appendChild(createPlayerElement(player));
+            });
+
+            document.getElementById('intermediateCount').textContent = players.intermediate.length;
+            document.getElementById('beginnerCount').textContent = players.beginner.length;
+        }
+
+        // Create player element
+        function createPlayerElement(player) {
+            const div = document.createElement('div');
+            div.className = `player-item ${player.status}`;
+            
+            let statusText = player.status;
+            if (player.status === 'absent') {
+                statusText = 'absent';
+            } else if (player.status === 'playing') {
+                statusText = 'playing';
+            } else {
+                statusText = 'present';
+            }
+            
+            const targetLevel = player.level === 'intermediate' ? 'beginner' : 'intermediate';
+            const buttonText = player.level === 'intermediate' ? '→ Beg' : '→ Int';
+            const isPlaying = player.status === 'playing';
+            
+            // Add click handler to the entire div
+            div.onclick = function(event) {
+                // Don't trigger if clicking on control buttons
+                if (event.target.classList.contains('level-toggle') || 
+                    event.target.classList.contains('delete-btn') || 
+                    event.target.classList.contains('rename-btn')) {
+                    return;
+                }
+                console.log('Click detected on', player.name);
+                togglePlayerAttendanceById(player.id, player.level);
+            };
+            
+            div.innerHTML = `
+                <span style="flex: 1;">${player.name}</span>
+                <div class="player-controls">
+                    <button class="level-toggle" onclick="event.stopPropagation(); changePlayerLevel('${player.id}', '${player.level}', '${targetLevel}')" ${isPlaying ? 'disabled' : ''} title="Move to ${targetLevel}">
+                        ${buttonText}
+                    </button>
+                    <button class="rename-btn" onclick="event.stopPropagation(); renamePlayer('${player.id}', '${player.level}')" ${isPlaying ? 'disabled' : ''} title="Rename player" style="padding: 2px 6px; background: #2196F3; color: white; border: none; border-radius: 4px; font-size: 0.7em; cursor: pointer; margin-left: 3px;">
+                        ✏️
+                    </button>
+                    <button class="delete-btn" onclick="event.stopPropagation(); deletePlayer('${player.id}', '${player.level}')" ${isPlaying ? 'disabled' : ''} title="Delete player" style="padding: 2px 6px; background: #f44336; color: white; border: none; border-radius: 4px; font-size: 0.7em; cursor: pointer; margin-left: 3px;">
+                        🗑️
+                    </button>
+                    <span class="player-status">${statusText}</span>
+                </div>
+            `;
+            return div;
+        }
+
+        // Change player level
+        function changePlayerLevel(playerId, currentLevel, targetLevel) {
+            // Find the player in current level
+            const playerIndex = players[currentLevel].findIndex(p => p.id === playerId);
+            if (playerIndex === -1) return;
+            
+            const player = players[currentLevel][playerIndex];
+            
+            // Can't move if playing
+            if (player.status === 'playing') {
+                alert('Cannot change level while player is in a game!');
+                return;
+            }
+            
+            // Remove from current level
+            players[currentLevel].splice(playerIndex, 1);
+            
+            // Change level and add to target level
+            player.level = targetLevel;
+            players[targetLevel].push(player);
+            
+            // Sort players by name for better organization
+            players[targetLevel].sort((a, b) => a.name.localeCompare(b.name));
+            
+            renderPlayers();
+            updateStats();
+            
+            console.log(`Moved ${player.name} from ${currentLevel} to ${targetLevel}`);
+        }
+
+        // Delete player function
+        function deletePlayer(playerId, level) {
+            const player = players[level].find(p => p.id === playerId);
+            if (!player) {
+                console.error(`Player not found: ${playerId} in ${level}`);
+                return;
+            }
+
+            if (player.status === 'playing') {
+                alert('Cannot delete a player who is currently playing. End their game first.');
+                return;
+            }
+
+            const confirmDelete = confirm(`Are you sure you want to delete "${player.name}"? This action cannot be undone.`);
+            if (confirmDelete) {
+                const playerIndex = players[level].findIndex(p => p.id === playerId);
+                players[level].splice(playerIndex, 1);
+                
+                console.log(`Deleted player: ${player.name}`);
+                renderPlayers();
+                updateStats();
+            }
+        }
+
+        // Rename player function
+        function renamePlayer(playerId, level) {
+            const player = players[level].find(p => p.id === playerId);
+            if (!player) {
+                console.error(`Player not found: ${playerId} in ${level}`);
+                return;
+            }
+
+            if (player.status === 'playing') {
+                alert('Cannot rename a player who is currently playing. End their game first.');
+                return;
+            }
+
+            const newName = prompt(`Enter new name for "${player.name}":`, player.name);
+            if (newName && newName.trim() && newName.trim() !== player.name) {
+                const oldName = player.name;
+                player.name = newName.trim();
+                
+                console.log(`Renamed player: "${oldName}" → "${player.name}"`);
+                renderPlayers();
+            }
+        }
+
+        // Toggle player attendance by ID and level
+        function togglePlayerAttendanceById(playerId, level) {
+            console.log(`=== ATTENDANCE TOGGLE DEBUG ===`);
+            console.log(`Trying to toggle player: ${playerId} in ${level}`);
+            console.log(`Available players in ${level}:`, players[level].map(p => `${p.id}: ${p.name}`));
+            
+            const player = players[level].find(p => p.id === playerId);
+            if (!player) {
+                console.error(`Player not found: ${playerId} in ${level}`);
+                alert(`Debug: Player not found: ${playerId} in ${level}`);
+                return;
+            }
+            
+            console.log(`Found player: ${player.name}, current status: ${player.status}`);
+            togglePlayerAttendance(player);
+        }
+
+        // Toggle player attendance
+        function togglePlayerAttendance(player) {
+            if (!player) return;
+            
+            if (player.status === 'playing') {
+                alert('Cannot mark a playing player as absent. End their game first.');
+                return;
+            }
+            
+            if (player.status === 'absent') {
+                player.status = 'available';
+                // When player returns from absent, they get a new queue timestamp (go to end of queue)
+                player.queueTimestamp = Date.now();
+                console.log(`${player.name} marked present - added to end of queue`);
+            } else {
+                player.status = 'absent';
+                console.log(`${player.name} marked absent`);
+            }
+            
+            renderPlayers();
+            updateStats();
+        }
+
+        // Mark all players as present
+        function markAllPresent() {
+            players.intermediate.forEach(player => {
+                if (player.status === 'absent') {
+                    player.status = 'available';
+                }
+            });
+            players.beginner.forEach(player => {
+                if (player.status === 'absent') {
+                    player.status = 'available';
+                }
+            });
+            renderPlayers();
+            updateStats();
+        }
+
+        // Mark all players as absent
+        function markAllAbsent() {
+            if (confirm('This will mark all non-playing players as absent. Continue?')) {
+                players.intermediate.forEach(player => {
+                    if (player.status !== 'playing') {
+                        player.status = 'absent';
+                    }
+                });
+                players.beginner.forEach(player => {
+                    if (player.status !== 'playing') {
+                        player.status = 'absent';
+                    }
+                });
+                renderPlayers();
+                updateStats();
+            }
+        }
+
+        // Render courts
+        function renderCourts() {
+            const container = document.getElementById('courtsSection');
+            container.innerHTML = '';
+
+            courts.forEach(court => {
+                const courtCard = createCourtCard(court);
+                container.appendChild(courtCard);
+            });
+        }
+
+        // Create court card
+        function createCourtCard(court) {
+            const div = document.createElement('div');
+            div.className = 'court-card';
+
+            const statusClass = court.occupied ? 'occupied' : 'empty';
+            const statusText = court.occupied ? 'Game in Progress' : 'Court Available';
+
+            let playersHTML = '';
+            if (court.occupied && court.players.length === 4) {
+                playersHTML = `
+                    <div class="players-on-court">
+                        ${court.players.map(p => `
+                            <div class="player-on-court ${p.level}">${p.name}</div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            const queueInfo = getQueueInfo(court);
+
+            // Special indicator for Court 3
+            const courtSpecialInfo = court.id === 3 ? 
+                `<div style="background: #e3f2fd; padding: 5px; border-radius: 5px; margin: 5px 0; font-size: 0.8em; text-align: center; color: #1976d2; font-weight: bold;">
+                    🏸 Prefers Intermediate Players
+                </div>` : '';
+
+            div.innerHTML = `
+                <div class="court-header">
+                    <span class="court-number">Court ${court.id}${court.id === 3 ? ' (Pref INT)' : ''}</span>
+                </div>
+                ${courtSpecialInfo}
+                <div class="court-status ${statusClass}">${statusText}</div>
+                ${playersHTML}
+                ${court.occupied ? 
+                    `<button class="btn btn-end" onclick="endGame(${court.id})">End Game</button>` :
+                    `<button class="btn btn-assign" onclick="assignPlayers(${court.id})" ${!canAssignPlayers(court.id) ? 'disabled' : ''}>
+                        Assign Players
+                    </button>`
+                }
+                <div class="queue-info">${queueInfo}</div>
+            `;
+
+            return div;
+        }
+
+        // Get queue info for a court
+        function getQueueInfo(court) {
+            return ''; // Queue info removed per user request
+        }
+
+        // Check if we can assign players (court-specific logic)
+        function canAssignPlayers(courtId = null) {
+            const availableIntermediate = players.intermediate.filter(p => p.status === 'available').length;
+            const availableBeginner = players.beginner.filter(p => p.status === 'available').length;
+            
+            // All courts can now use either level (Court 3 just prefers intermediates)
+            return availableIntermediate >= 4 || availableBeginner >= 4;
+        }
+
+        // Get players with bias towards preferred players (Mohsin, Mavia, Ali, Asad) and queue priority
+        function getRandomPlayers(playersList, count) {
+            const preferredNames = ['Mohsin Yasin', 'Mavia', 'Ali BIN ARSHAD', 'Asad'];
+            const biasChance = 0.85; // 85% chance to select preferred players
+            
+            // Sort players by queue time (oldest first) - this is the queue system
+            const sortedByQueue = [...playersList].sort((a, b) => a.queueTimestamp - b.queueTimestamp);
+            
+            // Separate preferred and other players (maintaining queue order)
+            const preferredPlayers = sortedByQueue.filter(p => preferredNames.includes(p.name));
+            const otherPlayers = sortedByQueue.filter(p => !preferredNames.includes(p.name));
+            
+            console.log(`=== PLAYER SELECTION WITH QUEUE PRIORITY ===`);
+            console.log(`Queue order (oldest first): ${sortedByQueue.map(p => `${p.name}(${new Date(p.queueTimestamp).toLocaleTimeString()})`).join(', ')}`);
+            console.log(`Available preferred players: ${preferredPlayers.map(p => p.name).join(', ')}`);
+            console.log(`Available other players: ${otherPlayers.map(p => p.name).join(', ')}`);
+            console.log(`Need to select: ${count} players`);
+            
+            // If we don't have enough preferred players, or random chance says no bias
+            if (preferredPlayers.length < count || Math.random() > biasChance) {
+                console.log('Using QUEUE-BASED selection (oldest players first)');
+                return sortedByQueue.slice(0, count);
+            }
+            
+            // Use biased selection but still respect queue order within groups
+            console.log('Using BIASED selection - favoring preferred players (but respecting queue order)');
+            let selectedPlayers = [];
+            
+            // First, select preferred players (in queue order)
+            const maxPreferredToSelect = Math.min(count, preferredPlayers.length);
+            selectedPlayers.push(...preferredPlayers.slice(0, maxPreferredToSelect));
+            
+            // Fill remaining slots with other players (in queue order)
+            const remainingSlots = count - selectedPlayers.length;
+            if (remainingSlots > 0) {
+                selectedPlayers.push(...otherPlayers.slice(0, remainingSlots));
+            }
+            
+            console.log(`Selected players: ${selectedPlayers.map(p => p.name).join(', ')}`);
+            console.log(`Preferred players selected: ${selectedPlayers.filter(p => preferredNames.includes(p.name)).length}/${count}`);
+            
+            return selectedPlayers;
+        }
+
+        // End game on a court
+        function endGame(courtId) {
+            const court = courts.find(c => c.id === courtId);
+            if (!court.occupied) return;
+
+            console.log(`=== GAME ENDING ON COURT ${courtId} ===`);
+            console.log(`Players finishing: ${court.players.map(p => p.name).join(', ')}`);
+
+            // Update player status back to available and put them at END of queue
+            court.players.forEach(player => {
+                player.status = 'available';
+                player.queueTimestamp = Date.now(); // New timestamp puts them at end of queue
+                console.log(`${player.name} moved to end of queue with timestamp: ${player.queueTimestamp}`);
+            });
+
+            // Clear court
+            court.occupied = false;
+            court.players = [];
+
+            renderPlayers();
+            renderCourts();
+            updateStats();
+
+            // Auto-assign next match if players are waiting
+            setTimeout(() => {
+                if (canAssignPlayers()) {
+                    // You can uncomment this to auto-assign
+                    // assignPlayers(courtId);
+                }
+            }, 500);
+        }
+
+        // Update statistics
+        function updateStats() {
+            const totalPresent = players.intermediate.filter(p => p.status !== 'absent').length + 
+                               players.beginner.filter(p => p.status !== 'absent').length;
+            const activeGames = courts.filter(c => c.occupied).length;
+            const availableCourts = courts.filter(c => !c.occupied).length;
+
+            document.getElementById('totalPlayers').textContent = totalPresent + ' present';
+            document.getElementById('activeGames').textContent = activeGames;
+            document.getElementById('availableCourts').textContent = availableCourts;
+        }
+
+        // Initialize the app
+        initializePlayers();
+
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then((registration) => {
+                        console.log('PWA: Service Worker registered successfully:', registration.scope);
+                        
+                        // Check for updates
+                        registration.addEventListener('updatefound', () => {
+                            console.log('PWA: New version available');
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    // New content is available, show update notification
+                                    if (confirm('New version available! Refresh to update?')) {
+                                        window.location.reload();
+                                    }
+                                }
+                            });
+                        });
+                    })
+                    .catch((error) => {
+                        console.log('PWA: Service Worker registration failed:', error);
+                    });
+            });
+        }
+
+        // PWA Install Prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('PWA: Install prompt available');
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // Show install button or notification
+            showInstallPrompt();
+        });
+
+        function showInstallPrompt() {
+            // Create install notification
+            const installBanner = document.createElement('div');
+            installBanner.id = 'install-banner';
+            installBanner.style.cssText = `
+                position: fixed;
+                top: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: #4caf50;
+                color: white;
+                padding: 10px 20px;
+                border-radius: 25px;
+                font-size: 14px;
+                z-index: 1000;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                cursor: pointer;
+                animation: slideDown 0.3s ease;
+            `;
+            installBanner.innerHTML = '📱 Install App - Tap here!';
+            
+            installBanner.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log('PWA: Install prompt result:', outcome);
+                    deferredPrompt = null;
+                    installBanner.remove();
+                }
+            });
+            
+            document.body.appendChild(installBanner);
+            
+            // Auto-hide after 10 seconds
+            setTimeout(() => {
+                if (installBanner.parentNode) {
+                    installBanner.remove();
+                }
+            }, 10000);
+        }
+
+        // Add slide animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideDown {
+                from { transform: translateX(-50%) translateY(-100%); }
+                to { transform: translateX(-50%) translateY(0); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // PWA Installation Success
+        window.addEventListener('appinstalled', (evt) => {
+            console.log('PWA: App installed successfully');
+            // Remove install prompt if still visible
+            const installBanner = document.getElementById('install-banner');
+            if (installBanner) {
+                installBanner.remove();
+            }
+        });
+    </script>
+</body>
+</html>
