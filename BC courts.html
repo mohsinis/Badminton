@@ -1174,20 +1174,13 @@
             const preferredPlayers = sortedByQueue.filter(p => preferredNames.includes(p.name));
             const otherPlayers = sortedByQueue.filter(p => !preferredNames.includes(p.name));
             
-            console.log(`=== PLAYER SELECTION WITH QUEUE PRIORITY ===`);
-            console.log(`Queue order (oldest first): ${sortedByQueue.map(p => `${p.name}(${new Date(p.queueTimestamp).toLocaleTimeString()})`).join(', ')}`);
-            console.log(`Available preferred players: ${preferredPlayers.map(p => p.name).join(', ')}`);
-            console.log(`Available other players: ${otherPlayers.map(p => p.name).join(', ')}`);
-            console.log(`Need to select: ${count} players`);
             
             // If we don't have enough preferred players, or random chance says no bias
             if (preferredPlayers.length < count || Math.random() > biasChance) {
-                console.log('Using QUEUE-BASED selection (oldest players first)');
                 return sortedByQueue.slice(0, count);
             }
             
             // Use biased selection but still respect queue order within groups
-            console.log('Using BIASED selection - favoring preferred players (but respecting queue order)');
             let selectedPlayers = [];
             
             // First, select preferred players (in queue order)
