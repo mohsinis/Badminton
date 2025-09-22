@@ -1552,6 +1552,27 @@
                         courts = firebaseData.courts;
                     } else {
                         console.log('🏸 No court data in Firebase, keeping local courts');
+                        // Reset courts if not in Firebase (don't persist games across sessions)
+                        courts.forEach(court => {
+                            court.occupied = false;
+                            court.players = [];
+                        });
+                    }
+                    
+                    // Reset playing status if courts are empty (consistency check)
+                    const anyOccupiedCourt = courts.some(court => court.occupied);
+                    if (!anyOccupiedCourt) {
+                        // No active games, ensure all players are available
+                        players.intermediate.forEach(player => {
+                            if (player.status === 'playing') {
+                                player.status = 'available';
+                            }
+                        });
+                        players.beginner.forEach(player => {
+                            if (player.status === 'playing') {
+                                player.status = 'available';
+                            }
+                        });
                     }
                     
                     console.log('✅ Successfully updated local data from Firebase');
