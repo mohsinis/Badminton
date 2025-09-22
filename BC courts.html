@@ -549,6 +549,7 @@
                     <h4>Data Management</h4>
                     <div class="toggle-buttons">
                         <button class="toggle-btn" onclick="clearAllData()" style="background: #ff5722; border-color: #ff5722;">Reset All Data</button>
+                        <button class="toggle-btn" onclick="clearCache()" style="background: #9c27b0; border-color: #9c27b0;">Clear Cache</button>
                         <button class="toggle-btn" onclick="fixFirebaseData()" style="background: #ff9800; border-color: #ff9800;">Fix Firebase</button>
                     </div>
                 </div>
@@ -741,7 +742,6 @@
                 renderPlayers();
                 renderCourts();
                 updateStats();
-                checkBiasSetup();
                 return;
             }
 
@@ -1267,6 +1267,39 @@
             }
         }
 
+        // Clear browser cache and localStorage
+        function clearCache() {
+            if (confirm('⚠️ This will clear all cached data and refresh the page. Continue?')) {
+                try {
+                    // Clear localStorage
+                    localStorage.clear();
+                    
+                    // Clear sessionStorage
+                    sessionStorage.clear();
+                    
+                    // Clear service worker cache if available
+                    if ('serviceWorker' in navigator && 'caches' in window) {
+                        caches.keys().then(function(cacheNames) {
+                            return Promise.all(
+                                cacheNames.map(function(cacheName) {
+                                    return caches.delete(cacheName);
+                                })
+                            );
+                        });
+                    }
+                    
+                    console.log('🧹 Cache cleared successfully');
+                    alert('✅ Cache cleared! Page will refresh.');
+                    
+                    // Force refresh without cache
+                    window.location.reload(true);
+                    
+                } catch (error) {
+                    console.error('❌ Error clearing cache:', error);
+                    alert('❌ Error clearing cache. Try manually clearing browser data.');
+                }
+            }
+        }
 
         // Fix Firebase data structure
         function fixFirebaseData() {
