@@ -450,6 +450,11 @@
             border-color: #f44336;
         }
 
+        .timer-display.paused {
+            background: #fff8e1;
+            border-color: #ff9800;
+        }
+
         .timer-icon {
             font-size: 1.1em;
             margin-right: 5px;
@@ -484,6 +489,14 @@
 
         .timer-display.stopped .timer-label {
             color: #c62828;
+        }
+
+        .timer-display.paused .timer-time {
+            color: #f57c00;
+        }
+
+        .timer-display.paused .timer-label {
+            color: #f57c00;
         }
 
         @keyframes pulse {
@@ -927,27 +940,34 @@
         // Start timer for a court
         function startCourtTimer(courtId) {
             const court = courts.find(c => c.id === courtId);
-            if (court && court.occupied && !court.startTime) {
-                court.startTime = Date.now();
-                court.elapsedTime = 0;
-                console.log(`⏱️ Timer started for Court ${courtId}`);
+            if (court && court.occupied) {
+                if (!court.startTime) {
+                    // Starting fresh or resuming - adjust start time based on elapsed time
+                    court.startTime = Date.now() - (court.elapsedTime || 0);
+                    console.log(`⏱️ Timer started for Court ${courtId} (resuming from ${formatTime(court.elapsedTime || 0)})`);
+                } else {
+                    console.log(`⏱️ Timer already running for Court ${courtId}`);
+                    return;
+                }
                 
                 // Start the global timer update if not already running
                 if (!timerInterval) {
                     timerInterval = setInterval(updateAllTimers, 1000);
                 }
+                
+                // Update display immediately
+                renderCourts();
             }
         }
 
-        // Stop timer for a court
-        function stopCourtTimer(courtId) {
+        // Pause timer for a court (stops timer but keeps elapsed time)
+        function pauseCourtTimer(courtId) {
             const court = courts.find(c => c.id === courtId);
-            if (court) {
-                if (court.startTime) {
-                    court.elapsedTime = Date.now() - court.startTime;
-                    console.log(`⏹️ Timer stopped for Court ${courtId}. Duration: ${formatTime(court.elapsedTime)}`);
-                }
-                court.startTime = null;
+            if (court && court.startTime) {
+                // Calculate total elapsed time including current session
+                court.elapsedTime = Date.now() - court.startTime;
+                court.startTime = null; // Mark as paused
+                console.log(`⏸️ Timer paused for Court ${courtId}. Duration: ${formatTime(court.elapsedTime)}`);
                 
                 // Stop global timer if no courts are active
                 const anyActiveTimer = courts.some(c => c.startTime !== null);
@@ -955,7 +975,37 @@
                     clearInterval(timerInterval);
                     timerInterval = null;
                 }
+                
+                // Update display immediately
+                renderCourts();
             }
+        }
+
+        // Stop timer for a court (used when ending game)
+        function stopCourtTimer(courtId) {
+            const court = courts.find(c => c.id === courtId);
+            if (court) {
+                if (court.startTime) {
+                    // Calculate final elapsed time
+                    court.elapsedTime = Date.now() - court.startTime;
+                }
+                const finalTime = court.elapsedTime || 0;
+                console.log(`🏁 Timer stopped for Court ${courtId}. Final Duration: ${formatTime(finalTime)}`);
+                
+                // Reset timer data
+                court.startTime = null;
+                court.elapsedTime = 0;
+                
+                // Stop global timer if no courts are active
+                const anyActiveTimer = courts.some(c => c.startTime !== null);
+                if (!anyActiveTimer && timerInterval) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                }
+                
+                return finalTime; // Return final time for game end summary
+            }
+            return 0;
         }
 
         // Update all active timers
@@ -1001,13 +1051,28 @@
             
             const formattedTime = formatTime(timeToShow);
             const isActive = court.startTime !== null;
-            const statusIcon = isActive ? '🟢' : '🔴';
+            const isPaused = !isActive && court.elapsedTime > 0;
+            
+            let statusIcon, statusLabel, statusClass;
+            if (isActive) {
+                statusIcon = '🟢';
+                statusLabel = 'Playing';
+                statusClass = 'active';
+            } else if (isPaused) {
+                statusIcon = '🟡';
+                statusLabel = 'Paused';
+                statusClass = 'paused';
+            } else {
+                statusIcon = '🔴';
+                statusLabel = 'Stopped';
+                statusClass = 'stopped';
+            }
             
             return `
-                <div class="timer-display ${isActive ? 'active' : 'stopped'}">
+                <div class="timer-display ${statusClass}">
                     <span class="timer-icon">${statusIcon}</span>
                     <span class="timer-time">${formattedTime}</span>
-                    <span class="timer-label">${isActive ? 'Playing' : 'Finished'}</span>
+                    <span class="timer-label">${statusLabel}</span>
                 </div>
             `;
         }
@@ -1466,8 +1531,8 @@
                 ${playersHTML}
                 ${court.occupied ? 
                     `<div class="timer-controls">
-                        <button class="timer-btn ${court.startTime ? 'stop' : 'start'}" onclick="${court.startTime ? `stopCourtTimer(${court.id})` : `startCourtTimer(${court.id})`}" ${!court.occupied ? 'disabled' : ''}>
-                            ${court.startTime ? '⏸️ Pause' : '▶️ Start'}
+                        <button class="timer-btn ${court.startTime ? 'stop' : 'start'}" onclick="${court.startTime ? `pauseCourtTimer(${court.id})` : `startCourtTimer(${court.id})`}" ${!court.occupied ? 'disabled' : ''}>
+                            ${court.startTime ? '⏸️ Pause' : '▶️ Resume'}
                         </button>
                         <button class="btn btn-end" onclick="endGame(${court.id})" style="margin-top: 5px;">End Game</button>
                     </div>` :
@@ -1544,11 +1609,18 @@
             const court = courts.find(c => c.id === courtId);
             if (!court.occupied) return;
 
-            // Stop the timer for this court
-            stopCourtTimer(courtId);
+            // Get final time and stop the timer
+            const finalTime = stopCourtTimer(courtId);
+            const gameTimeFormatted = formatTime(finalTime);
 
             console.log(`=== GAME ENDING ON COURT ${courtId} ===`);
             console.log(`Players finishing: ${court.players.map(p => p.name).join(', ')}`);
+
+            // Show game summary
+            const playerNames = court.players.map(p => p.name).join(', ');
+            const summaryMessage = `🏸 Game Complete!\n\nCourt ${courtId}\nPlayers: ${playerNames}\nGame Duration: ${gameTimeFormatted}\n\nGreat game everyone! 🎉`;
+            
+            alert(summaryMessage);
 
             // Update player status back to available and put them at END of queue
             court.players.forEach(player => {
