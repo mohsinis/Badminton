@@ -427,6 +427,146 @@
             color: #666;
         }
 
+        /* Manual Assignment Styles */
+        .btn-manual {
+            background: #2196F3;
+            color: white;
+            margin-top: 5px;
+        }
+
+        .btn-manual:hover {
+            background: #1976D2;
+        }
+
+        .assignment-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .assignment-buttons .btn {
+            margin: 0;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .player-selection {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .player-option {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .player-option:hover {
+            border-color: #2196F3;
+            background-color: #f0f8ff;
+        }
+
+        .player-option.selected {
+            border-color: #4caf50;
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .player-option.intermediate {
+            background-color: #fff3e0;
+        }
+
+        .player-option.beginner {
+            background-color: #f0f4ff;
+        }
+
+        .selected-count {
+            text-align: center;
+            margin: 15px 0;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn-primary {
+            background: #4caf50;
+            color: white;
+        }
+
+        .modal-btn-primary:hover {
+            background: #45a049;
+        }
+
+        .modal-btn-secondary {
+            background: #f44336;
+            color: white;
+        }
+
+        .modal-btn-secondary:hover {
+            background: #d32f2f;
+        }
+
         .add-player-form {
             margin-bottom: 15px;
             padding: 12px;
@@ -608,21 +748,7 @@
 
             let selectedPlayers = [];
 
-            // Court 3 PREFERS intermediate players but allows beginners if no intermediates available
-            if (courtId === 3) {
-                if (availableIntermediate.length >= 4) {
-                    selectedPlayers = getRandomPlayers(availableIntermediate, 4);
-                    console.log(`Court 3 (Preferred Intermediate): Selected intermediate players - ${selectedPlayers.map(p => p.name).join(', ')}`);
-                } else if (availableBeginner.length >= 4) {
-                    selectedPlayers = getRandomPlayers(availableBeginner, 4);
-                    console.log(`Court 3 (Fallback to Beginner): No intermediates available, selected beginner players - ${selectedPlayers.map(p => p.name).join(', ')}`);
-                } else {
-                    alert(`Not enough players available for Court 3. Need 4 players but only ${availableIntermediate.length} intermediate and ${availableBeginner.length} beginner players available.`);
-                    return;
-                }
-            } 
-            // Courts 1, 2, and 4 are assigned based on availability
-            else {
+            // All courts are assigned based on availability
                 // Prioritize intermediate players if we have 4 or more
                 if (availableIntermediate.length >= 4) {
                     selectedPlayers = getRandomPlayers(availableIntermediate, 4);
@@ -1121,24 +1247,26 @@
 
             const queueInfo = getQueueInfo(court);
 
-            // Special indicator for Court 3
-            const courtSpecialInfo = court.id === 3 ? 
-                `<div style="background: #e3f2fd; padding: 5px; border-radius: 5px; margin: 5px 0; font-size: 0.8em; text-align: center; color: #1976d2; font-weight: bold;">
-                    🏸 Prefers Intermediate Players
-                </div>` : '';
+            // No special indicators for any courts
+            const courtSpecialInfo = '';
 
             div.innerHTML = `
                 <div class="court-header">
-                    <span class="court-number">Court ${court.id}${court.id === 3 ? ' (Pref INT)' : ''}</span>
+                    <span class="court-number">Court ${court.id}</span>
                 </div>
                 ${courtSpecialInfo}
                 <div class="court-status ${statusClass}">${statusText}</div>
                 ${playersHTML}
                 ${court.occupied ? 
                     `<button class="btn btn-end" onclick="endGame(${court.id})">End Game</button>` :
-                    `<button class="btn btn-assign" onclick="assignPlayers(${court.id})" ${!canAssignPlayers(court.id) ? 'disabled' : ''}>
-                        Assign Players
-                    </button>`
+                    `<div class="assignment-buttons">
+                        <button class="btn btn-assign" onclick="assignPlayers(${court.id})" ${!canAssignPlayers(court.id) ? 'disabled' : ''}>
+                            🎲 Auto Assign
+                        </button>
+                        <button class="btn btn-manual" onclick="openManualAssignment(${court.id})" ${!canAssignPlayers(court.id) ? 'disabled' : ''}>
+                            👥 Manual Select
+                        </button>
+                    </div>`
                 }
                 <div class="queue-info">${queueInfo}</div>
             `;
@@ -1156,7 +1284,7 @@
             const availableIntermediate = players.intermediate.filter(p => p.status === 'available').length;
             const availableBeginner = players.beginner.filter(p => p.status === 'available').length;
             
-            // All courts can now use either level (Court 3 just prefers intermediates)
+            // All courts can use either level
             // Also allow mixed games when individual levels don't have 4 players
             return availableIntermediate >= 4 || availableBeginner >= 4 || 
                    (availableIntermediate + availableBeginner >= 4);
@@ -1793,6 +1921,216 @@
                 }
             }, 2000);
         });
+
+        // Manual Assignment Functions
+        let currentCourtForManualAssignment = null;
+        let selectedPlayersForManualAssignment = [];
+
+        function openManualAssignment(courtId) {
+            currentCourtForManualAssignment = courtId;
+            selectedPlayersForManualAssignment = [];
+            
+            // Show modal
+            document.getElementById('manualAssignmentModal').style.display = 'block';
+            
+            // Update modal title
+            document.getElementById('modalCourtTitle').textContent = `Court ${courtId}`;
+            
+            // Render available players
+            renderManualAssignmentPlayers();
+            updateSelectedCount();
+        }
+
+        function closeManualAssignment() {
+            document.getElementById('manualAssignmentModal').style.display = 'none';
+            currentCourtForManualAssignment = null;
+            selectedPlayersForManualAssignment = [];
+        }
+
+        function renderManualAssignmentPlayers() {
+            const availableIntermediate = players.intermediate.filter(p => p.status === 'available');
+            const availableBeginner = players.beginner.filter(p => p.status === 'available');
+            const allAvailable = [...availableIntermediate, ...availableBeginner];
+
+            const container = document.getElementById('playerSelectionContainer');
+            container.innerHTML = '';
+
+            if (allAvailable.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No players available for assignment</p>';
+                return;
+            }
+
+            // Group by level for better organization
+            if (availableIntermediate.length > 0) {
+                const intermediateHeader = document.createElement('h4');
+                intermediateHeader.textContent = `Intermediate Players (${availableIntermediate.length})`;
+                intermediateHeader.style.cssText = 'color: #ff9800; margin: 15px 0 10px 0; text-align: center;';
+                container.appendChild(intermediateHeader);
+
+                availableIntermediate.forEach(player => {
+                    container.appendChild(createPlayerOption(player));
+                });
+            }
+
+            if (availableBeginner.length > 0) {
+                const beginnerHeader = document.createElement('h4');
+                beginnerHeader.textContent = `Beginner Players (${availableBeginner.length})`;
+                beginnerHeader.style.cssText = 'color: #2196F3; margin: 15px 0 10px 0; text-align: center;';
+                container.appendChild(beginnerHeader);
+
+                availableBeginner.forEach(player => {
+                    container.appendChild(createPlayerOption(player));
+                });
+            }
+        }
+
+        function createPlayerOption(player) {
+            const div = document.createElement('div');
+            div.className = `player-option ${player.level}`;
+            div.textContent = player.name;
+            div.onclick = () => togglePlayerSelection(player);
+            return div;
+        }
+
+        function togglePlayerSelection(player) {
+            const index = selectedPlayersForManualAssignment.findIndex(p => p.id === player.id);
+            
+            if (index === -1) {
+                // Add player if not selected and we have room
+                if (selectedPlayersForManualAssignment.length < 4) {
+                    selectedPlayersForManualAssignment.push(player);
+                } else {
+                    alert('You can only select 4 players maximum for a court.');
+                    return;
+                }
+            } else {
+                // Remove player if already selected
+                selectedPlayersForManualAssignment.splice(index, 1);
+            }
+            
+            updatePlayerSelectionUI();
+            updateSelectedCount();
+        }
+
+        function updatePlayerSelectionUI() {
+            const playerOptions = document.querySelectorAll('.player-option');
+            playerOptions.forEach(option => {
+                const playerName = option.textContent;
+                const isSelected = selectedPlayersForManualAssignment.some(p => p.name === playerName);
+                
+                if (isSelected) {
+                    option.classList.add('selected');
+                } else {
+                    option.classList.remove('selected');
+                }
+            });
+        }
+
+        function updateSelectedCount() {
+            const countElement = document.getElementById('selectedCount');
+            const count = selectedPlayersForManualAssignment.length;
+            countElement.textContent = `Selected: ${count}/4 players`;
+            
+            // Update assign button state
+            const assignBtn = document.getElementById('manualAssignBtn');
+            assignBtn.disabled = count !== 4;
+            
+            if (count === 4) {
+                assignBtn.style.opacity = '1';
+                assignBtn.style.cursor = 'pointer';
+            } else {
+                assignBtn.style.opacity = '0.6';
+                assignBtn.style.cursor = 'not-allowed';
+            }
+        }
+
+        function confirmManualAssignment() {
+            if (selectedPlayersForManualAssignment.length !== 4) {
+                alert('Please select exactly 4 players.');
+                return;
+            }
+
+            const court = courts.find(c => c.id === currentCourtForManualAssignment);
+            if (!court || court.occupied) {
+                alert('Court is not available for assignment.');
+                return;
+            }
+
+            // Update player status
+            selectedPlayersForManualAssignment.forEach(player => {
+                if (player.level === 'intermediate') {
+                    const playerIndex = players.intermediate.findIndex(p => p.id === player.id);
+                    if (playerIndex !== -1) {
+                        players.intermediate[playerIndex].status = 'playing';
+                    }
+                } else {
+                    const playerIndex = players.beginner.findIndex(p => p.id === player.id);
+                    if (playerIndex !== -1) {
+                        players.beginner[playerIndex].status = 'playing';
+                    }
+                }
+            });
+
+            // Update court
+            court.occupied = true;
+            court.players = selectedPlayersForManualAssignment;
+
+            // Log the manual assignment
+            console.log(`Court ${currentCourtForManualAssignment} (Manual Assignment): Selected players - ${selectedPlayersForManualAssignment.map(p => `${p.name}(${p.level})`).join(', ')}`);
+
+            // Update UI
+            renderPlayers();
+            renderCourts();
+            updateStats();
+            
+            // Send push notifications
+            checkForPlayerTurn(selectedPlayersForManualAssignment);
+            
+            // Sync to Firebase
+            console.log('🏸 Syncing manual court assignment to Firebase');
+            savePlayersDataWithSync();
+
+            // Close modal
+            closeManualAssignment();
+
+            // Switch to courts tab on mobile after assigning
+            if (isMobile()) {
+                setTimeout(() => switchTab('courts'), 100);
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('manualAssignmentModal');
+            if (event.target === modal) {
+                closeManualAssignment();
+            }
+        }
     </script>
+
+    <!-- Manual Assignment Modal -->
+    <div id="manualAssignmentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Manual Player Assignment - <span id="modalCourtTitle">Court</span></h2>
+                <span class="close" onclick="closeManualAssignment()">&times;</span>
+            </div>
+            
+            <div class="selected-count" id="selectedCount">Selected: 0/4 players</div>
+            
+            <div id="playerSelectionContainer" class="player-selection">
+                <!-- Players will be populated here -->
+            </div>
+            
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-primary" id="manualAssignBtn" onclick="confirmManualAssignment()" disabled>
+                    ✅ Assign Selected Players
+                </button>
+                <button class="modal-btn modal-btn-secondary" onclick="closeManualAssignment()">
+                    ❌ Cancel
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
