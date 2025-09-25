@@ -427,6 +427,119 @@
             color: #666;
         }
 
+        /* Timer Styles */
+        .timer-display {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin: 10px 0;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s ease;
+        }
+
+        .timer-display.active {
+            background: #e8f5e9;
+            border-color: #4caf50;
+            animation: pulse 2s infinite;
+        }
+
+        .timer-display.stopped {
+            background: #ffebee;
+            border-color: #f44336;
+        }
+
+        .timer-icon {
+            font-size: 1.1em;
+            margin-right: 5px;
+        }
+
+        .timer-time {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+            margin: 0 8px;
+        }
+
+        .timer-display.active .timer-time {
+            color: #2e7d32;
+        }
+
+        .timer-display.stopped .timer-time {
+            color: #c62828;
+        }
+
+        .timer-label {
+            font-size: 0.8em;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: 5px;
+        }
+
+        .timer-display.active .timer-label {
+            color: #2e7d32;
+        }
+
+        .timer-display.stopped .timer-label {
+            color: #c62828;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        /* Timer controls */
+        .timer-controls {
+            display: flex;
+            gap: 5px;
+            margin-top: 8px;
+        }
+
+        .timer-btn {
+            flex: 1;
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 4px;
+            font-size: 0.75em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .timer-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .timer-btn.start {
+            background: #4caf50;
+            color: white;
+            border-color: #4caf50;
+        }
+
+        .timer-btn.start:hover {
+            background: #45a049;
+        }
+
+        .timer-btn.stop {
+            background: #f44336;
+            color: white;
+            border-color: #f44336;
+        }
+
+        .timer-btn.stop:hover {
+            background: #d32f2f;
+        }
+
+        .timer-btn:disabled {
+            background: #e9ecef;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+
         /* Manual Assignment Styles */
         .btn-manual {
             background: #2196F3;
@@ -775,6 +888,9 @@
             court.occupied = true;
             court.players = selectedPlayers;
 
+            // Start the timer for this court
+            startCourtTimer(courtId);
+
             renderPlayers();
             renderCourts();
             updateStats();
@@ -799,11 +915,102 @@
         };
 
         let courts = [
-            { id: 1, occupied: false, players: [] },
-            { id: 2, occupied: false, players: [] },
-            { id: 3, occupied: false, players: [] },
-            { id: 4, occupied: false, players: [] }
+            { id: 1, occupied: false, players: [], startTime: null, elapsedTime: 0 },
+            { id: 2, occupied: false, players: [], startTime: null, elapsedTime: 0 },
+            { id: 3, occupied: false, players: [], startTime: null, elapsedTime: 0 },
+            { id: 4, occupied: false, players: [], startTime: null, elapsedTime: 0 }
         ];
+
+        // Timer management
+        let timerInterval = null;
+
+        // Start timer for a court
+        function startCourtTimer(courtId) {
+            const court = courts.find(c => c.id === courtId);
+            if (court && court.occupied && !court.startTime) {
+                court.startTime = Date.now();
+                court.elapsedTime = 0;
+                console.log(`⏱️ Timer started for Court ${courtId}`);
+                
+                // Start the global timer update if not already running
+                if (!timerInterval) {
+                    timerInterval = setInterval(updateAllTimers, 1000);
+                }
+            }
+        }
+
+        // Stop timer for a court
+        function stopCourtTimer(courtId) {
+            const court = courts.find(c => c.id === courtId);
+            if (court) {
+                if (court.startTime) {
+                    court.elapsedTime = Date.now() - court.startTime;
+                    console.log(`⏹️ Timer stopped for Court ${courtId}. Duration: ${formatTime(court.elapsedTime)}`);
+                }
+                court.startTime = null;
+                
+                // Stop global timer if no courts are active
+                const anyActiveTimer = courts.some(c => c.startTime !== null);
+                if (!anyActiveTimer && timerInterval) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                }
+            }
+        }
+
+        // Update all active timers
+        function updateAllTimers() {
+            let hasActiveTimer = false;
+            courts.forEach(court => {
+                if (court.startTime && court.occupied) {
+                    hasActiveTimer = true;
+                    court.elapsedTime = Date.now() - court.startTime;
+                }
+            });
+            
+            // Update the display
+            renderCourts();
+            
+            // Stop interval if no active timers
+            if (!hasActiveTimer) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        // Format time in MM:SS format
+        function formatTime(milliseconds) {
+            const totalSeconds = Math.floor(milliseconds / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // Get timer display for a court
+        function getTimerDisplay(court) {
+            if (!court.occupied) {
+                return '';
+            }
+            
+            let timeToShow = 0;
+            if (court.startTime) {
+                timeToShow = Date.now() - court.startTime;
+            } else if (court.elapsedTime > 0) {
+                timeToShow = court.elapsedTime;
+            }
+            
+            const formattedTime = formatTime(timeToShow);
+            const isActive = court.startTime !== null;
+            const statusIcon = isActive ? '🟢' : '🔴';
+            
+            return `
+                <div class="timer-display ${isActive ? 'active' : 'stopped'}">
+                    <span class="timer-icon">${statusIcon}</span>
+                    <span class="timer-time">${formattedTime}</span>
+                    <span class="timer-label">${isActive ? 'Playing' : 'Finished'}</span>
+                </div>
+            `;
+        }
 
         // Save players data to localStorage
         function savePlayersData() {
@@ -1255,9 +1462,15 @@
                 </div>
                 ${courtSpecialInfo}
                 <div class="court-status ${statusClass}">${statusText}</div>
+                ${getTimerDisplay(court)}
                 ${playersHTML}
                 ${court.occupied ? 
-                    `<button class="btn btn-end" onclick="endGame(${court.id})">End Game</button>` :
+                    `<div class="timer-controls">
+                        <button class="timer-btn ${court.startTime ? 'stop' : 'start'}" onclick="${court.startTime ? `stopCourtTimer(${court.id})` : `startCourtTimer(${court.id})`}" ${!court.occupied ? 'disabled' : ''}>
+                            ${court.startTime ? '⏸️ Pause' : '▶️ Start'}
+                        </button>
+                        <button class="btn btn-end" onclick="endGame(${court.id})" style="margin-top: 5px;">End Game</button>
+                    </div>` :
                     `<div class="assignment-buttons">
                         <button class="btn btn-assign" onclick="assignPlayers(${court.id})" ${!canAssignPlayers(court.id) ? 'disabled' : ''}>
                             🎲 Auto Assign
@@ -1330,6 +1543,9 @@
         function endGame(courtId) {
             const court = courts.find(c => c.id === courtId);
             if (!court.occupied) return;
+
+            // Stop the timer for this court
+            stopCourtTimer(courtId);
 
             console.log(`=== GAME ENDING ON COURT ${courtId} ===`);
             console.log(`Players finishing: ${court.players.map(p => p.name).join(', ')}`);
@@ -1679,11 +1895,19 @@
                         courts = firebaseData.courts;
                     } else {
                         console.log('🏸 No court data in Firebase, keeping local courts');
-                        // Reset courts if not in Firebase (don't persist games across sessions)
-                        courts.forEach(court => {
-                            court.occupied = false;
-                            court.players = [];
-                        });
+                    // Reset courts if not in Firebase (don't persist games across sessions)
+                    courts.forEach(court => {
+                        court.occupied = false;
+                        court.players = [];
+                        court.startTime = null;
+                        court.elapsedTime = 0;
+                    });
+                    
+                    // Stop any running timers
+                    if (timerInterval) {
+                        clearInterval(timerInterval);
+                        timerInterval = null;
+                    }
                     }
                     
                     // Reset playing status if courts are empty (consistency check)
@@ -2073,6 +2297,9 @@
             // Update court
             court.occupied = true;
             court.players = selectedPlayersForManualAssignment;
+
+            // Start the timer for this court
+            startCourtTimer(currentCourtForManualAssignment);
 
             // Log the manual assignment
             console.log(`Court ${currentCourtForManualAssignment} (Manual Assignment): Selected players - ${selectedPlayersForManualAssignment.map(p => `${p.name}(${p.level})`).join(', ')}`);
