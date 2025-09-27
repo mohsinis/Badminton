@@ -363,10 +363,27 @@
         }
 
         .attendance-toggle {
-            margin-bottom: 15px;
-            padding: 12px;
-            background: #f0f0f0;
-            border-radius: 10px;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .checkin-helper {
+            margin-bottom: 20px;
+            padding: 16px;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-radius: 12px;
+            border: 1px solid #3b82f6;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .checkin-helper h4 {
+            color: #1d4ed8;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            font-weight: 600;
         }
 
         .attendance-toggle h4 {
@@ -1189,6 +1206,14 @@
                     </div>
                 </div>
 
+                <div class="checkin-helper" id="checkinHelper">
+                    <h4>🎯 Quick Start</h4>
+                    <p style="font-size: 0.85em; color: #64748b; margin-bottom: 12px;">To enable courts, check in 4+ players:</p>
+                    <button class="toggle-btn" onclick="quickCheckIn()" style="background: #3b82f6; border-color: #3b82f6; width: 100%;">
+                        ✓ Check In First 4 Players
+                    </button>
+                </div>
+
                 <div class="attendance-toggle">
                     <h4>Game Settings</h4>
                     <div class="form-group">
@@ -1690,6 +1715,7 @@
             renderPlayers();
             renderCourts();
             updateStats();
+            updateCheckinHelper();
             
         }
 
@@ -1722,6 +1748,7 @@
 
             renderPlayers();
             updateWaitTimes(); // Update queue display
+            updateCheckinHelper();
             savePlayersDataWithSync();
         }
 
@@ -1788,6 +1815,7 @@
             
             renderPlayers();
             updateStats();
+            updateCheckinHelper();
             savePlayersDataWithSync(); // Save after adding new player
         }
 
@@ -2000,6 +2028,7 @@
             
             renderPlayers();
             updateStats();
+            updateCheckinHelper();
             savePlayersDataWithSync(); // Save after attendance change
         }
 
@@ -2017,6 +2046,7 @@
             });
             renderPlayers();
             updateStats();
+            updateCheckinHelper();
             savePlayersDataWithSync(); // Save after bulk attendance change
         }
 
@@ -2035,7 +2065,65 @@
                 });
                 renderPlayers();
                 updateStats();
+                updateCheckinHelper();
                 savePlayersDataWithSync(); // Save after bulk attendance change
+            }
+        }
+
+        // Quick check-in function to get started quickly
+        function quickCheckIn() {
+            const availablePlayers = [...players.intermediate, ...players.beginner]
+                .filter(p => p.status === 'available' && !p.checkedIn);
+            
+            if (availablePlayers.length < 4) {
+                alert('Need at least 4 available players to check in. Please mark more players as present first.');
+                return;
+            }
+
+            // Check in first 4 available players
+            const playersToCheckIn = availablePlayers.slice(0, 4);
+            playersToCheckIn.forEach(player => {
+                player.checkedIn = true;
+                player.queueTimestamp = Date.now();
+            });
+
+            renderPlayers();
+            renderCourts();
+            updateWaitTimes();
+            updateCheckinHelper();
+            savePlayersDataWithSync();
+
+            const playerNames = playersToCheckIn.map(p => p.name).join(', ');
+            showConnectionStatus(`✅ Checked in: ${playerNames}`);
+        }
+
+        // Update check-in helper visibility
+        function updateCheckinHelper() {
+            const helper = document.getElementById('checkinHelper');
+            if (!helper) return;
+
+            const checkedInCount = [...players.intermediate, ...players.beginner]
+                .filter(p => p.checkedIn && p.status === 'available').length;
+            
+            if (checkedInCount >= 4) {
+                helper.style.display = 'none';
+            } else {
+                helper.style.display = 'block';
+                
+                // Update the helper text based on current state
+                const availableCount = [...players.intermediate, ...players.beginner]
+                    .filter(p => p.status === 'available' && !p.checkedIn).length;
+                
+                const helpText = helper.querySelector('p');
+                if (availableCount < 4) {
+                    helpText.textContent = `Need ${4 - availableCount} more players marked as present first.`;
+                    helper.querySelector('button').disabled = true;
+                    helper.querySelector('button').style.opacity = '0.6';
+                } else {
+                    helpText.textContent = `To enable courts, check in 4+ players:`;
+                    helper.querySelector('button').disabled = false;
+                    helper.querySelector('button').style.opacity = '1';
+                }
             }
         }
 
