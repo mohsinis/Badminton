@@ -1081,127 +1081,109 @@
             min-width: 35px;
         }
 
-        /* Badminton Court Animation */
+        /* Badminton Court Animation - Positioned over player names */
         .court-animation {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 120px;
-            height: 80px;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             pointer-events: none;
-            z-index: 1;
+            z-index: 0; /* Behind text content */
         }
 
-        .player {
+        /* Animated player dots positioned around the player names area */
+        .animated-player {
             position: absolute;
-            width: 16px;
-            height: 16px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-            background: #007bff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 8px;
         }
 
-        .player::before {
+        .animated-player::before {
             content: '🏸';
             position: absolute;
-            font-size: 6px;
-            animation: racketSwing 1.5s ease-in-out infinite;
+            font-size: 4px;
+            right: -6px;
+            top: -2px;
+            animation: racketHold 2s ease-in-out infinite;
         }
 
-        .player1 {
-            top: 10px;
-            left: 10px;
+        .animated-player1 {
+            top: 70%;
+            left: 15%;
             background: #007bff;
-            animation: playerMove1 3s ease-in-out infinite;
+            animation: playerBounce1 4s ease-in-out infinite;
         }
 
-        .player2 {
-            top: 10px;
-            right: 10px;
+        .animated-player2 {
+            top: 70%;
+            right: 15%;
             background: #28a745;
-            animation: playerMove2 3s ease-in-out infinite 0.5s;
+            animation: playerBounce2 4s ease-in-out infinite 1s;
         }
 
-        .player3 {
-            bottom: 10px;
-            left: 10px;
+        .animated-player3 {
+            bottom: 25%;
+            left: 15%;
             background: #ffc107;
-            animation: playerMove3 3s ease-in-out infinite 1s;
+            animation: playerBounce3 4s ease-in-out infinite 2s;
         }
 
-        .player4 {
-            bottom: 10px;
-            right: 10px;
+        .animated-player4 {
+            bottom: 25%;
+            right: 15%;
             background: #dc3545;
-            animation: playerMove4 3s ease-in-out infinite 1.5s;
+            animation: playerBounce4 4s ease-in-out infinite 3s;
         }
 
         .shuttlecock {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 12px;
-            animation: shuttleFly 2s ease-in-out infinite;
+            font-size: 8px;
+            z-index: 1;
+            animation: shuttleRally 8s ease-in-out infinite;
         }
 
-        /* Animation Keyframes */
-        @keyframes playerMove1 {
+        /* Realistic Animation Keyframes */
+        @keyframes playerBounce1 {
             0%, 100% { transform: translate(0, 0) scale(1); }
-            25% { transform: translate(5px, -3px) scale(1.1); }
-            50% { transform: translate(8px, 2px) scale(1); }
-            75% { transform: translate(3px, 5px) scale(0.9); }
+            12.5% { transform: translate(2px, -3px) scale(1.2); } /* Hit moment */
+            25%, 75% { transform: translate(0, 0) scale(1); }
         }
 
-        @keyframes playerMove2 {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            25% { transform: translate(-5px, 3px) scale(1.1); }
-            50% { transform: translate(-8px, -2px) scale(1); }
-            75% { transform: translate(-3px, 5px) scale(0.9); }
+        @keyframes playerBounce2 {
+            0%, 25%, 75%, 100% { transform: translate(0, 0) scale(1); }
+            37.5% { transform: translate(-2px, -3px) scale(1.2); } /* Hit moment */
         }
 
-        @keyframes playerMove3 {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            25% { transform: translate(3px, -5px) scale(1.1); }
-            50% { transform: translate(-2px, -8px) scale(1); }
-            75% { transform: translate(5px, -3px) scale(0.9); }
+        @keyframes playerBounce3 {
+            0%, 50%, 100% { transform: translate(0, 0) scale(1); }
+            62.5% { transform: translate(2px, -3px) scale(1.2); } /* Hit moment */
         }
 
-        @keyframes playerMove4 {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            25% { transform: translate(-3px, -5px) scale(1.1); }
-            50% { transform: translate(2px, -8px) scale(1); }
-            75% { transform: translate(-5px, -3px) scale(0.9); }
+        @keyframes playerBounce4 {
+            0%, 75%, 100% { transform: translate(0, 0) scale(1); }
+            87.5% { transform: translate(-2px, -3px) scale(1.2); } /* Hit moment */
         }
 
-        @keyframes shuttleFly {
-            0% { transform: translate(-50%, -50%) translate(-20px, -10px); opacity: 1; }
-            25% { transform: translate(-50%, -50%) translate(15px, -20px); opacity: 0.8; }
-            50% { transform: translate(-50%, -50%) translate(20px, 5px); opacity: 1; }
-            75% { transform: translate(-50%, -50%) translate(-10px, 15px); opacity: 0.8; }
-            100% { transform: translate(-50%, -50%) translate(-20px, -10px); opacity: 1; }
+        @keyframes shuttleRally {
+            0% { top: 70%; left: 15%; opacity: 0; }
+            10% { top: 60%; left: 25%; opacity: 1; }
+            25% { top: 70%; right: 15%; opacity: 1; }
+            35% { top: 60%; right: 25%; opacity: 1; }
+            50% { bottom: 25%; right: 15%; opacity: 1; }
+            60% { bottom: 35%; right: 25%; opacity: 1; }
+            75% { bottom: 25%; left: 15%; opacity: 1; }
+            85% { bottom: 35%; left: 25%; opacity: 1; }
+            100% { top: 70%; left: 15%; opacity: 0; }
         }
 
-        @keyframes racketSwing {
-            0%, 100% { transform: rotate(0deg) scale(1); }
-            25% { transform: rotate(-15deg) scale(1.2); }
-            50% { transform: rotate(10deg) scale(1.1); }
-            75% { transform: rotate(-5deg) scale(1.05); }
-        }
-
-        /* Court net line */
-        .court-net {
-            position: absolute;
-            top: 50%;
-            left: 20%;
-            right: 20%;
-            height: 1px;
-            background: rgba(0, 0, 0, 0.2);
-            transform: translateY(-50%);
+        @keyframes racketHold {
+            0%, 90%, 100% { transform: rotate(0deg) scale(1); }
+            95% { transform: rotate(-30deg) scale(1.3); } /* Quick swing */
         }
 
         .player-stat-row {
@@ -2332,11 +2314,10 @@
                 ${getTimerDisplay(court)}
                 ${court.occupied ? `
                     <div class="court-animation">
-                        <div class="court-net"></div>
-                        <div class="player player1"></div>
-                        <div class="player player2"></div>
-                        <div class="player player3"></div>
-                        <div class="player player4"></div>
+                        <div class="animated-player animated-player1"></div>
+                        <div class="animated-player animated-player2"></div>
+                        <div class="animated-player animated-player3"></div>
+                        <div class="animated-player animated-player4"></div>
                         <div class="shuttlecock">🏸</div>
                     </div>
                 ` : ''}
@@ -2466,7 +2447,7 @@
             // Update player status back to available and put them at END of queue
             court.players.forEach(player => {
                 player.status = 'available';
-                player.checkedIn = false; // Players are checked out after playing
+                // Keep players checked in after playing - they can play again
                 player.queueTimestamp = Date.now(); // New timestamp puts them at end of queue
                 console.log(`${player.name} moved to end of queue with timestamp: ${player.queueTimestamp}`);
             });
