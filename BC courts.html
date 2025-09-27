@@ -238,6 +238,12 @@
             text-decoration: line-through;
         }
 
+        .player-item.checked-in {
+            background: #e3f2fd;
+            border: 2px solid #2196F3;
+            box-shadow: 0 2px 4px rgba(33, 150, 243, 0.2);
+        }
+
         .player-controls {
             display: flex;
             gap: 5px;
@@ -1164,9 +1170,9 @@
                 </div>
 
                 <div class="wait-time-panel">
-                    <h3>⏰ Current Queue & Wait Times</h3>
+                    <h3>📋 Current Queue</h3>
                     <div id="waitTimeContainer">
-                        <!-- Wait time estimates will be populated here -->
+                        <!-- Current queue will be populated here -->
                     </div>
                 </div>
             </div>
@@ -1185,12 +1191,12 @@
             const court = courts.find(c => c.id === courtId);
             if (court.occupied) return;
 
-            const availableIntermediate = players.intermediate.filter(p => p.status === 'available');
-            const availableBeginner = players.beginner.filter(p => p.status === 'available');
+            const availableIntermediate = players.intermediate.filter(p => p.status === 'available' && p.checkedIn);
+            const availableBeginner = players.beginner.filter(p => p.status === 'available' && p.checkedIn);
 
             let selectedPlayers = [];
 
-            // All courts are assigned based on availability
+            // All courts are assigned based on checked-in availability
                 // Prioritize intermediate players if we have 4 or more
                 if (availableIntermediate.length >= 4) {
                     selectedPlayers = getRandomPlayers(availableIntermediate, 4);
@@ -1204,7 +1210,7 @@
                     selectedPlayers = getRandomPlayers(mixedPlayers, 4);
                     console.log(`Court ${courtId} (Mixed Levels): Selected mixed players - ${selectedPlayers.map(p => `${p.name}(${p.level})`).join(', ')}`);
                 } else {
-                    alert(`Not enough players available for Court ${courtId}. Need 4 players but only ${availableIntermediate.length} intermediate and ${availableBeginner.length} beginner players available.`);
+                    alert(`Not enough checked-in players for Court ${courtId}. Need 4 checked-in players but only ${availableIntermediate.length} intermediate and ${availableBeginner.length} beginner players are checked in.`);
                     return;
                 }
 
@@ -1227,6 +1233,10 @@
             
             // Send push notifications
             checkForPlayerTurn(selectedPlayers);
+            
+            // Voice announcement
+            const playerNames = selectedPlayers.map(p => p.name);
+            announcePlayerNames(playerNames);
             
             // Sync court assignment to Firebase
             console.log('🏸 Syncing court assignment to Firebase');
@@ -1529,6 +1539,7 @@
                     name: name,
                     status: 'available',
                     level: 'intermediate',
+                    checkedIn: false, // Players start unchecked
                     queueTimestamp: Date.now() // Track when they became available
                 });
             });
@@ -1561,6 +1572,7 @@
                     name: name,
                     status: 'available',
                     level: 'beginner',
+                    checkedIn: false, // Players start unchecked
                     queueTimestamp: Date.now() // Track when they became available
                 });
             });
@@ -1574,6 +1586,62 @@
             
         }
 
+
+        // Toggle check-in status for a player
+        function toggleCheckIn(playerId, level) {
+            const player = players[level].find(p => p.id === playerId);
+            if (!player) {
+                console.error(`Player not found: ${playerId} in ${level}`);
+                return;
+            }
+
+            if (player.status !== 'available') {
+                alert('Player must be available to check in/out');
+                return;
+            }
+
+            if (player.checkedIn) {
+                // Check out
+                player.checkedIn = false;
+                console.log(`${player.name} checked out`);
+                showConnectionStatus(`${player.name} checked out`);
+            } else {
+                // Check in
+                player.checkedIn = true;
+                player.queueTimestamp = Date.now(); // Reset queue position when checking in
+                console.log(`${player.name} checked in`);
+                showConnectionStatus(`${player.name} checked in`);
+            }
+
+            renderPlayers();
+            updateWaitTimes(); // Update queue display
+            savePlayersDataWithSync();
+        }
+
+        // Voice announcement function
+        function announcePlayerNames(playerNames) {
+            if ('speechSynthesis' in window) {
+                const announcement = `Now playing: ${playerNames.join(', ')}`;
+                const utterance = new SpeechSynthesisUtterance(announcement);
+                utterance.rate = 0.8;
+                utterance.volume = 0.8;
+                utterance.pitch = 1.0;
+                
+                // Try to use a clear voice
+                const voices = speechSynthesis.getVoices();
+                const englishVoice = voices.find(voice => 
+                    voice.lang.startsWith('en') && (voice.name.includes('Google') || voice.name.includes('Microsoft'))
+                );
+                if (englishVoice) {
+                    utterance.voice = englishVoice;
+                }
+                
+                speechSynthesis.speak(utterance);
+                console.log('🔊 Announced:', announcement);
+            } else {
+                console.log('🔇 Speech synthesis not supported');
+            }
+        }
 
         // Add new player
         function addPlayer() {
@@ -1603,6 +1671,7 @@
                 status: 'available',
                 level: level,
                 isGuest: levelSelect.includes('guest-'),
+                checkedIn: false, // New players are not checked in by default
                 queueTimestamp: Date.now() // New players go to end of queue
             };
 
@@ -1638,13 +1707,19 @@
         // Create player element
         function createPlayerElement(player) {
             const div = document.createElement('div');
-            div.className = `player-item ${player.status}`;
+            let className = `player-item ${player.status}`;
+            if (player.checkedIn && player.status === 'available') {
+                className += ' checked-in';
+            }
+            div.className = className;
             
             let statusText = player.status;
             if (player.status === 'absent') {
                 statusText = 'absent';
             } else if (player.status === 'playing') {
                 statusText = 'playing';
+            } else if (player.checkedIn) {
+                statusText = 'checked in';
             } else {
                 statusText = 'present';
             }
@@ -1652,18 +1727,30 @@
             const targetLevel = player.level === 'intermediate' ? 'beginner' : 'intermediate';
             const buttonText = player.level === 'intermediate' ? '→ Beg' : '→ Int';
             const isPlaying = player.status === 'playing';
+            const isAbsent = player.status === 'absent';
             
             // Add click handler to the entire div
             div.onclick = function(event) {
                 // Don't trigger if clicking on control buttons
                 if (event.target.classList.contains('level-toggle') || 
                     event.target.classList.contains('delete-btn') || 
-                    event.target.classList.contains('rename-btn')) {
+                    event.target.classList.contains('rename-btn') ||
+                    event.target.classList.contains('checkin-btn')) {
                     return;
                 }
                 console.log('Click detected on', player.name);
                 togglePlayerAttendanceById(player.id, player.level);
             };
+            
+            // Check-in button (only show if present and not playing)
+            let checkinButton = '';
+            if (player.status === 'available' && !isPlaying) {
+                if (player.checkedIn) {
+                    checkinButton = `<button class="checkin-btn" onclick="event.stopPropagation(); toggleCheckIn('${player.id}', '${player.level}')" title="Check out" style="padding: 2px 6px; background: #28a745; color: white; border: none; border-radius: 4px; font-size: 0.7em; cursor: pointer; margin-left: 3px;">✓</button>`;
+                } else {
+                    checkinButton = `<button class="checkin-btn" onclick="event.stopPropagation(); toggleCheckIn('${player.id}', '${player.level}')" title="Check in" style="padding: 2px 6px; background: #6c757d; color: white; border: none; border-radius: 4px; font-size: 0.7em; cursor: pointer; margin-left: 3px;">○</button>`;
+                }
+            }
             
             div.innerHTML = `
                 <span style="flex: 1;">${player.name}</span>
@@ -1671,6 +1758,7 @@
                     <button class="level-toggle" onclick="event.stopPropagation(); changePlayerLevel('${player.id}', '${player.level}', '${targetLevel}')" ${isPlaying ? 'disabled' : ''} title="Move to ${targetLevel}">
                         ${buttonText}
                     </button>
+                    ${checkinButton}
                     <button class="rename-btn" onclick="event.stopPropagation(); renamePlayer('${player.id}', '${player.level}')" ${isPlaying ? 'disabled' : ''} title="Rename player" style="padding: 2px 6px; background: #2196F3; color: white; border: none; border-radius: 4px; font-size: 0.7em; cursor: pointer; margin-left: 3px;">
                         ✏️
                     </button>
@@ -1916,8 +2004,8 @@
 
         // Check if we can assign players (court-specific logic)
         function canAssignPlayers(courtId = null) {
-            const availableIntermediate = players.intermediate.filter(p => p.status === 'available').length;
-            const availableBeginner = players.beginner.filter(p => p.status === 'available').length;
+            const availableIntermediate = players.intermediate.filter(p => p.status === 'available' && p.checkedIn).length;
+            const availableBeginner = players.beginner.filter(p => p.status === 'available' && p.checkedIn).length;
             
             // All courts can use either level
             // Also allow mixed games when individual levels don't have 4 players
@@ -2002,6 +2090,7 @@
             // Update player status back to available and put them at END of queue
             court.players.forEach(player => {
                 player.status = 'available';
+                player.checkedIn = false; // Players are checked out after playing
                 player.queueTimestamp = Date.now(); // New timestamp puts them at end of queue
                 console.log(`${player.name} moved to end of queue with timestamp: ${player.queueTimestamp}`);
             });
@@ -2676,35 +2765,34 @@
             container.innerHTML = html;
         }
 
-        // Update wait times display
+        // Update current queue display
         function updateWaitTimes() {
             const container = document.getElementById('waitTimeContainer');
             
-            const availableIntermediate = players.intermediate.filter(p => p.status === 'available');
-            const availableBeginner = players.beginner.filter(p => p.status === 'available');
+            const availableIntermediate = players.intermediate.filter(p => p.status === 'available' && p.checkedIn);
+            const availableBeginner = players.beginner.filter(p => p.status === 'available' && p.checkedIn);
             const allAvailable = [...availableIntermediate, ...availableBeginner];
             
             if (allAvailable.length === 0) {
-                container.innerHTML = '<div style="text-align: center; color: #6c757d; padding: 20px;">No players waiting</div>';
+                container.innerHTML = '<div style="text-align: center; color: #6c757d; padding: 20px;">No players checked in</div>';
                 return;
             }
             
-            // Sort by queue timestamp
+            // Sort by queue timestamp (earliest = highest priority)
             const sortedQueue = allAvailable.sort((a, b) => a.queueTimestamp - b.queueTimestamp);
             
             let html = '';
             sortedQueue.forEach((player, index) => {
-                const waitInfo = calculateWaitTime(player);
+                const position = index + 1;
                 
                 html += `
                     <div class="wait-time-item">
                         <div class="wait-time-player">
-                            <div class="wait-time-position">${waitInfo.position}</div>
+                            <div class="wait-time-position">${position}</div>
                             <span>${player.name} (${player.level})</span>
                         </div>
-                        <div>
-                            <div class="wait-time-estimate ${waitInfo.class}">${waitInfo.estimate}</div>
-                            <div class="wait-time-actual">waited: ${waitInfo.actualWait}</div>
+                        <div class="queue-status">
+                            ${position <= 4 ? '<span style="color: #28a745; font-weight: bold;">Next up!</span>' : 'In queue'}
                         </div>
                     </div>
                 `;
@@ -3053,15 +3141,15 @@
         }
 
         function renderManualAssignmentPlayers() {
-            const availableIntermediate = players.intermediate.filter(p => p.status === 'available');
-            const availableBeginner = players.beginner.filter(p => p.status === 'available');
+            const availableIntermediate = players.intermediate.filter(p => p.status === 'available' && p.checkedIn);
+            const availableBeginner = players.beginner.filter(p => p.status === 'available' && p.checkedIn);
             const allAvailable = [...availableIntermediate, ...availableBeginner];
 
             const container = document.getElementById('playerSelectionContainer');
             container.innerHTML = '';
 
             if (allAvailable.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No players available for assignment</p>';
+                container.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No players checked in for assignment</p>';
                 return;
             }
 
@@ -3193,6 +3281,10 @@
             
             // Send push notifications
             checkForPlayerTurn(selectedPlayersForManualAssignment);
+            
+            // Voice announcement
+            const playerNames = selectedPlayersForManualAssignment.map(p => p.name);
+            announcePlayerNames(playerNames);
             
             // Sync to Firebase
             console.log('🏸 Syncing manual court assignment to Firebase');
