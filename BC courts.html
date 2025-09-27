@@ -896,6 +896,14 @@
         .wait-time-estimate {
             font-weight: bold;
             color: #495057;
+            text-align: right;
+        }
+
+        .wait-time-actual {
+            font-size: 0.8em;
+            color: #6c757d;
+            text-align: right;
+            margin-top: 2px;
         }
 
         .wait-time-estimate.short {
@@ -1069,6 +1077,15 @@
                 </div>
 
                 <div class="attendance-toggle">
+                    <h4>Game Settings</h4>
+                    <div class="form-group">
+                        <label for="avgGameDurationSetting">Average Game Duration (minutes):</label>
+                        <input type="number" id="avgGameDurationSetting" min="5" max="60" value="15" onchange="updateGameDurationSetting()">
+                        <small style="color: #666; font-size: 0.8em;">Used for wait time calculations</small>
+                    </div>
+                </div>
+
+                <div class="attendance-toggle">
                     <h4>Data Management</h4>
                     <div class="toggle-buttons">
                         <button class="toggle-btn" onclick="clearAllData()" style="background: #ff5722; border-color: #ff5722;">Reset All Data</button>
@@ -1157,31 +1174,6 @@
     </div>
 
     <script>
-        // Tab switching for mobile
-        function switchTab(tab) {
-            const playersSection = document.getElementById('playersSection');
-            const courtsSection = document.getElementById('courtsSection');
-            const statsSection = document.getElementById('statsSection');
-            const tabButtons = document.querySelectorAll('.tab-btn');
-
-            // Remove active class from all sections and buttons
-            playersSection.classList.remove('active');
-            courtsSection.classList.remove('active');
-            statsSection.classList.remove('active');
-            tabButtons.forEach(btn => btn.classList.remove('active'));
-
-            if (tab === 'players') {
-                playersSection.classList.add('active');
-                tabButtons[0].classList.add('active');
-            } else if (tab === 'courts') {
-                courtsSection.classList.add('active');
-                tabButtons[1].classList.add('active');
-            } else if (tab === 'stats') {
-                statsSection.classList.add('active');
-                tabButtons[2].classList.add('active');
-                updateStatsDashboard(); // Refresh stats when switching to stats tab
-            }
-        }
 
         // Check if mobile
         function isMobile() {
@@ -1231,6 +1223,7 @@
             renderPlayers();
             renderCourts();
             updateStats();
+            updateWaitTimes(); // Update wait times after assignment
             
             // Send push notifications
             checkForPlayerTurn(selectedPlayers);
@@ -1268,8 +1261,14 @@
             averageGameDuration: 0
         };
 
+        // Game settings
+        let gameSettings = {
+            defaultGameDuration: 15 * 60 * 1000 // 15 minutes in milliseconds
+        };
+
         // Timer management
         let timerInterval = null;
+        let waitTimeUpdateInterval = null;
 
         // Start timer for a court
         function startCourtTimer(courtId) {
@@ -1420,6 +1419,7 @@
                     gameHistory: gameHistory,
                     playerStats: playerStats,
                     sessionStats: sessionStats,
+                    gameSettings: gameSettings,
                     timestamp: Date.now()
                 };
                 localStorage.setItem('badmintonClubData', JSON.stringify(dataToSave));
@@ -1458,6 +1458,11 @@
                         // Reset session start time to current session
                         sessionStats.startTime = Date.now();
                         console.log('✅ Loaded session statistics');
+                    }
+                    
+                    if (parsedData.gameSettings) {
+                        gameSettings = { ...gameSettings, ...parsedData.gameSettings };
+                        console.log('✅ Loaded game settings');
                     }
                     
                     // Reset courts (don't persist games across sessions)
@@ -2009,6 +2014,7 @@
             renderCourts();
             updateStats();
             updateStatsDashboard(); // Update statistics after game ends
+            updateWaitTimes(); // Update wait times after game ends
             
             // Sync court end game to Firebase
             console.log('🏸 Syncing court end game to Firebase');
@@ -2294,6 +2300,7 @@
                 gameHistory: gameHistory,
                 playerStats: playerStats,
                 sessionStats: sessionStats,
+                gameSettings: gameSettings,
                 lastUpdated: Date.now(),
                 updatedBy: currentUserId
             };
@@ -2395,6 +2402,19 @@
                         console.log('✅ Loaded session stats from Firebase');
                     }
                     
+                    if (firebaseData.gameSettings) {
+                        gameSettings = { ...gameSettings, ...firebaseData.gameSettings };
+                        console.log('✅ Loaded game settings from Firebase');
+                        
+                        // Update the UI input
+                        setTimeout(() => {
+                            const input = document.getElementById('avgGameDurationSetting');
+                            if (input) {
+                                input.value = Math.round(gameSettings.defaultGameDuration / (60 * 1000));
+                            }
+                        }, 100);
+                    }
+                    
                     // Update courts from Firebase if available
                     if (firebaseData.courts && Array.isArray(firebaseData.courts)) {
                         console.log('🏸 Syncing court data from Firebase');
@@ -2449,37 +2469,69 @@
             }
         }
 
-        // Calculate estimated wait time for a player
+        // Calculate smart wait time for a player based on actual wait duration and queue position
         function calculateWaitTime(player) {
             const availableIntermediate = players.intermediate.filter(p => p.status === 'available');
             const availableBeginner = players.beginner.filter(p => p.status === 'available');
             const allAvailable = [...availableIntermediate, ...availableBeginner];
             
-            // Sort by queue timestamp to get position
+            // Sort by queue timestamp to get position (earliest timestamp = longest wait = higher priority)
             const sortedQueue = allAvailable.sort((a, b) => a.queueTimestamp - b.queueTimestamp);
             const playerPosition = sortedQueue.findIndex(p => p.id === player.id) + 1;
             
-            if (playerPosition === 0) return { position: 0, estimate: '0 min', class: 'short' };
+            if (playerPosition === 0) return { position: 0, estimate: '0 min', actualWait: '0 min', class: 'short' };
             
-            // Calculate based on:
-            // - Current games in progress and their remaining time
-            // - Average game duration
-            // - Number of courts available
+            // Calculate actual time this player has been waiting
+            const actualWaitMs = Date.now() - player.queueTimestamp;
+            const actualWaitMinutes = Math.floor(actualWaitMs / (60 * 1000));
+            const actualWaitText = actualWaitMinutes < 1 ? '< 1 min' : `${actualWaitMinutes} min`;
             
             const occupiedCourts = courts.filter(c => c.occupied).length;
             const availableCourts = courts.length - occupiedCourts;
             
             // If courts are available, player could be assigned immediately
             if (availableCourts > 0 && playerPosition <= availableCourts * 4) {
-                return { position: playerPosition, estimate: '< 1 min', class: 'short' };
+                return { 
+                    position: playerPosition, 
+                    estimate: 'Next up!', 
+                    actualWait: actualWaitText,
+                    class: 'short' 
+                };
             }
             
-            // Estimate based on average game duration and queue position
-            const avgGameDuration = sessionStats.averageGameDuration || 15 * 60 * 1000; // Default 15 minutes
-            const gamesAhead = Math.ceil((playerPosition - (availableCourts * 4)) / 4);
-            const estimatedWaitMs = gamesAhead * avgGameDuration;
+            // Smart estimation based on:
+            // 1. Current games in progress and their elapsed time
+            // 2. Queue position ahead of this player
+            // 3. Average game duration (session or custom setting)
             
-            const estimatedMinutes = Math.ceil(estimatedWaitMs / (60 * 1000));
+            const avgGameDuration = sessionStats.averageGameDuration || gameSettings.defaultGameDuration;
+            
+            // Calculate estimated time until courts become available
+            let minTimeToCourtAvailable = Infinity;
+            
+            courts.forEach(court => {
+                if (court.occupied && court.startTime) {
+                    const gameElapsed = Date.now() - court.startTime;
+                    const estimatedTimeLeft = Math.max(0, avgGameDuration - gameElapsed);
+                    minTimeToCourtAvailable = Math.min(minTimeToCourtAvailable, estimatedTimeLeft);
+                } else if (court.occupied && court.elapsedTime) {
+                    const estimatedTimeLeft = Math.max(0, avgGameDuration - court.elapsedTime);
+                    minTimeToCourtAvailable = Math.min(minTimeToCourtAvailable, estimatedTimeLeft);
+                }
+            });
+            
+            // If no courts are occupied, use average game duration
+            if (minTimeToCourtAvailable === Infinity) {
+                minTimeToCourtAvailable = avgGameDuration;
+            }
+            
+            // Calculate how many "waves" of players are ahead
+            const playersAhead = playerPosition - 1;
+            const wavesAhead = Math.floor(playersAhead / 4); // 4 players per wave
+            const extraWaitTime = wavesAhead * avgGameDuration;
+            
+            const totalEstimatedWaitMs = minTimeToCourtAvailable + extraWaitTime;
+            const estimatedMinutes = Math.ceil(totalEstimatedWaitMs / (60 * 1000));
             
             let estimate, cssClass;
             if (estimatedMinutes <= 5) {
@@ -2493,7 +2545,12 @@
                 cssClass = 'long';
             }
             
-            return { position: playerPosition, estimate: estimate, class: cssClass };
+            return { 
+                position: playerPosition, 
+                estimate: estimate, 
+                actualWait: actualWaitText,
+                class: cssClass 
+            };
         }
 
         // Update statistics dashboard
@@ -2645,12 +2702,113 @@
                             <div class="wait-time-position">${waitInfo.position}</div>
                             <span>${player.name} (${player.level})</span>
                         </div>
-                        <div class="wait-time-estimate ${waitInfo.class}">${waitInfo.estimate}</div>
+                        <div>
+                            <div class="wait-time-estimate ${waitInfo.class}">${waitInfo.estimate}</div>
+                            <div class="wait-time-actual">waited: ${waitInfo.actualWait}</div>
+                        </div>
                     </div>
                 `;
             });
             
             container.innerHTML = html;
+        }
+
+        // Update game duration setting
+        function updateGameDurationSetting() {
+            const input = document.getElementById('avgGameDurationSetting');
+            const minutes = parseInt(input.value);
+            
+            if (minutes >= 5 && minutes <= 60) {
+                gameSettings.defaultGameDuration = minutes * 60 * 1000; // Convert to milliseconds
+                console.log(`⚙️ Game duration setting updated to ${minutes} minutes`);
+                
+                // Update wait times immediately
+                updateWaitTimes();
+                
+                // Save settings
+                savePlayersDataWithSync();
+                
+                // Show feedback
+                showConnectionStatus(`⚙️ Game duration set to ${minutes} min`);
+            } else {
+                alert('Please enter a duration between 5 and 60 minutes');
+                input.value = Math.round(gameSettings.defaultGameDuration / (60 * 1000)); // Reset to current value
+            }
+        }
+
+        // Load game settings from saved data
+        function loadGameSettings() {
+            const savedData = localStorage.getItem('badmintonClubData');
+            if (savedData) {
+                try {
+                    const parsedData = JSON.parse(savedData);
+                    if (parsedData.gameSettings) {
+                        gameSettings = { ...gameSettings, ...parsedData.gameSettings };
+                        
+                        // Update the UI input
+                        const input = document.getElementById('avgGameDurationSetting');
+                        if (input) {
+                            input.value = Math.round(gameSettings.defaultGameDuration / (60 * 1000));
+                        }
+                        
+                        console.log('✅ Loaded game settings');
+                    }
+                } catch (error) {
+                    console.error('❌ Error loading game settings:', error);
+                }
+            }
+        }
+
+        // Start wait time auto-update timer
+        function startWaitTimeUpdates() {
+            if (!waitTimeUpdateInterval) {
+                waitTimeUpdateInterval = setInterval(() => {
+                    // Only update if stats section is active or wait times are visible
+                    const statsSection = document.getElementById('statsSection');
+                    if (statsSection && statsSection.classList.contains('active')) {
+                        updateWaitTimes();
+                    }
+                }, 30000); // Update every 30 seconds
+                console.log('⏰ Started wait time auto-updates');
+            }
+        }
+
+        // Stop wait time auto-update timer
+        function stopWaitTimeUpdates() {
+            if (waitTimeUpdateInterval) {
+                clearInterval(waitTimeUpdateInterval);
+                waitTimeUpdateInterval = null;
+                console.log('⏰ Stopped wait time auto-updates');
+            }
+        }
+
+        // Enhanced tab switching with wait time updates
+        function switchTab(tab) {
+            const playersSection = document.getElementById('playersSection');
+            const courtsSection = document.getElementById('courtsSection');
+            const statsSection = document.getElementById('statsSection');
+            const tabButtons = document.querySelectorAll('.tab-btn');
+
+            // Remove active class from all sections and buttons
+            playersSection.classList.remove('active');
+            courtsSection.classList.remove('active');
+            statsSection.classList.remove('active');
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+
+            if (tab === 'players') {
+                playersSection.classList.add('active');
+                tabButtons[0].classList.add('active');
+                stopWaitTimeUpdates();
+            } else if (tab === 'courts') {
+                courtsSection.classList.add('active');
+                tabButtons[1].classList.add('active');
+                stopWaitTimeUpdates();
+            } else if (tab === 'stats') {
+                statsSection.classList.add('active');
+                tabButtons[2].classList.add('active');
+                updateStatsDashboard(); // Refresh stats when switching to stats tab
+                startWaitTimeUpdates(); // Start auto-updating wait times
+            }
         }
 
         // Add event listener for player stats filter
@@ -2659,6 +2817,17 @@
             if (filterSelect) {
                 filterSelect.addEventListener('change', updatePlayerStatistics);
             }
+            
+            // Load game settings when page loads
+            setTimeout(loadGameSettings, 100);
+            
+            // Start wait time updates if stats section is initially active
+            setTimeout(() => {
+                const statsSection = document.getElementById('statsSection');
+                if (statsSection && statsSection.classList.contains('active')) {
+                    startWaitTimeUpdates();
+                }
+            }, 1000);
         });
 
         // Modified save function that uses Firebase
