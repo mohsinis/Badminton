@@ -2025,26 +2025,66 @@
 
         // Clear all data and reset to defaults
         function clearAllData() {
-            const confirmClear = confirm('⚠️ This will reset ALL player data (names, attendance, etc.) back to defaults. This cannot be undone. Are you sure?');
+            const confirmClear = confirm('⚠️ This will reset attendance, game history, and statistics, but keep your custom player names. Continue?');
             if (confirmClear) {
+                // Preserve current player names and custom players
+                const currentPlayers = {
+                    intermediate: [...players.intermediate],
+                    beginner: [...players.beginner]
+                };
+                
                 // Clear localStorage
                 localStorage.removeItem('badmintonClubData');
-                console.log('🗑️ Cleared all saved data');
+                console.log('🗑️ Cleared saved data');
                 
-                // Reset players arrays
-                players.intermediate = [];
-                players.beginner = [];
+                // Reset attendance for all players
+                currentPlayers.intermediate.forEach(player => {
+                    player.status = 'available';
+                    player.queueTimestamp = Date.now();
+                });
+                currentPlayers.beginner.forEach(player => {
+                    player.status = 'available';
+                    player.queueTimestamp = Date.now();
+                });
+                
+                // Restore players with reset attendance
+                players.intermediate = currentPlayers.intermediate;
+                players.beginner = currentPlayers.beginner;
                 
                 // Reset courts
                 courts.forEach(court => {
                     court.occupied = false;
                     court.players = [];
+                    court.startTime = null;
+                    court.elapsedTime = 0;
                 });
                 
-                // Reinitialize with default data
-                initializePlayers();
+                // Reset statistics
+                gameHistory = [];
+                playerStats = {};
+                sessionStats = {
+                    startTime: Date.now(),
+                    totalGames: 0,
+                    totalPlayTime: 0,
+                    averageGameDuration: 0
+                };
                 
-                alert('✅ All data has been reset to defaults!');
+                // Stop any running timers
+                if (timerInterval) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                }
+                
+                // Update UI
+                renderPlayers();
+                renderCourts();
+                updateStats();
+                updateStatsDashboard();
+                
+                // Save the reset data
+                savePlayersDataWithSync();
+                
+                alert('✅ Attendance and statistics reset! Your custom player names have been preserved.');
             }
         }
 
