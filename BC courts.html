@@ -111,6 +111,12 @@
             grid-template-columns: 300px 1fr;
             gap: 20px;
         }
+        
+        @media (min-width: 769px) {
+            .stats-section {
+                display: block !important;
+            }
+        }
 
         @media (max-width: 768px) {
             body {
@@ -152,6 +158,14 @@
 
             .courts-section.active {
                 display: grid;
+            }
+            
+            .stats-section {
+                display: none;
+            }
+
+            .stats-section.active {
+                display: block;
             }
         }
 
@@ -760,6 +774,248 @@
             opacity: 0.6;
             pointer-events: none;
         }
+
+        /* Statistics Dashboard Styles */
+        .stats-section {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: none;
+        }
+
+        .stats-section.active {
+            display: block;
+        }
+
+        .stats-section h2 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 1.3em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-panel {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid #e9ecef;
+        }
+
+        .stat-panel h3 {
+            margin-bottom: 12px;
+            color: #495057;
+            font-size: 1em;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 8px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            color: #495057;
+            font-size: 0.95em;
+        }
+
+        .player-stats-controls {
+            margin-bottom: 12px;
+        }
+
+        .player-stats-controls select {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        .wait-time-panel {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid #e9ecef;
+        }
+
+        .wait-time-panel h3 {
+            margin-bottom: 12px;
+            color: #495057;
+            font-size: 1em;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 8px;
+        }
+
+        .wait-time-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            margin: 6px 0;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .wait-time-player {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .wait-time-position {
+            background: #667eea;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        .wait-time-estimate {
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .wait-time-estimate.short {
+            color: #28a745;
+        }
+
+        .wait-time-estimate.medium {
+            color: #ffc107;
+        }
+
+        .wait-time-estimate.long {
+            color: #dc3545;
+        }
+
+        .court-usage-bar {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+        }
+
+        .court-usage-label {
+            width: 60px;
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+
+        .court-usage-progress {
+            flex: 1;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 0 10px;
+        }
+
+        .court-usage-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+
+        .court-usage-percent {
+            font-size: 0.85em;
+            font-weight: bold;
+            color: #495057;
+            min-width: 35px;
+        }
+
+        .player-stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 8px;
+            margin: 4px 0;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+            font-size: 0.85em;
+        }
+
+        .player-stat-name {
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .player-stat-value {
+            color: #6c757d;
+        }
+
+        .recent-game-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            margin: 6px 0;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            font-size: 0.85em;
+        }
+
+        .recent-game-info {
+            flex: 1;
+        }
+
+        .recent-game-court {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .recent-game-players {
+            color: #6c757d;
+            margin-top: 2px;
+        }
+
+        .recent-game-duration {
+            font-weight: bold;
+            color: #495057;
+        }
+
+        @media (max-width: 768px) {
+            .stats-section {
+                max-height: calc(100vh - 250px);
+                overflow-y: auto;
+                padding: 12px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .stat-panel {
+                padding: 12px;
+            }
+
+            .wait-time-panel {
+                padding: 12px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -783,6 +1039,7 @@
             <div class="tab-buttons">
                 <button class="tab-btn active" onclick="switchTab('players')">Players</button>
                 <button class="tab-btn" onclick="switchTab('courts')">Courts</button>
+                <button class="tab-btn" onclick="switchTab('stats')">Stats</button>
             </div>
         </div>
 
@@ -836,6 +1093,67 @@
             <div class="courts-section" id="courtsSection">
                 <!-- Courts will be dynamically generated -->
             </div>
+
+            <div class="stats-section" id="statsSection">
+                <h2>📊 Statistics & Analytics</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-panel">
+                        <h3>🎯 Session Overview</h3>
+                        <div class="stat-item">
+                            <span class="stat-label">Games Completed:</span>
+                            <span class="stat-value" id="totalGamesCompleted">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Total Play Time:</span>
+                            <span class="stat-value" id="totalPlayTime">0:00</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Average Game Duration:</span>
+                            <span class="stat-value" id="avgGameDuration">0:00</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Session Duration:</span>
+                            <span class="stat-value" id="sessionDuration">0:00</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-panel">
+                        <h3>🏸 Court Utilization</h3>
+                        <div id="courtUtilization">
+                            <!-- Court usage stats will be populated here -->
+                        </div>
+                    </div>
+
+                    <div class="stat-panel">
+                        <h3>👥 Player Statistics</h3>
+                        <div class="player-stats-controls">
+                            <select id="playerStatsFilter">
+                                <option value="all">All Players</option>
+                                <option value="intermediate">Intermediate</option>
+                                <option value="beginner">Beginner</option>
+                            </select>
+                        </div>
+                        <div id="playerStatsContainer">
+                            <!-- Player stats will be populated here -->
+                        </div>
+                    </div>
+
+                    <div class="stat-panel">
+                        <h3>📈 Recent Games</h3>
+                        <div id="recentGamesContainer">
+                            <!-- Recent game history will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="wait-time-panel">
+                    <h3>⏰ Current Queue & Wait Times</h3>
+                    <div id="waitTimeContainer">
+                        <!-- Wait time estimates will be populated here -->
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -844,18 +1162,25 @@
         function switchTab(tab) {
             const playersSection = document.getElementById('playersSection');
             const courtsSection = document.getElementById('courtsSection');
+            const statsSection = document.getElementById('statsSection');
             const tabButtons = document.querySelectorAll('.tab-btn');
+
+            // Remove active class from all sections and buttons
+            playersSection.classList.remove('active');
+            courtsSection.classList.remove('active');
+            statsSection.classList.remove('active');
+            tabButtons.forEach(btn => btn.classList.remove('active'));
 
             if (tab === 'players') {
                 playersSection.classList.add('active');
-                courtsSection.classList.remove('active');
                 tabButtons[0].classList.add('active');
-                tabButtons[1].classList.remove('active');
-            } else {
-                playersSection.classList.remove('active');
+            } else if (tab === 'courts') {
                 courtsSection.classList.add('active');
-                tabButtons[0].classList.remove('active');
                 tabButtons[1].classList.add('active');
+            } else if (tab === 'stats') {
+                statsSection.classList.add('active');
+                tabButtons[2].classList.add('active');
+                updateStatsDashboard(); // Refresh stats when switching to stats tab
             }
         }
 
@@ -933,6 +1258,16 @@
             { id: 3, occupied: false, players: [], startTime: null, elapsedTime: 0 },
             { id: 4, occupied: false, players: [], startTime: null, elapsedTime: 0 }
         ];
+
+        // Statistics and Analytics
+        let gameHistory = []; // Store completed games
+        let playerStats = {}; // Store individual player statistics
+        let sessionStats = {
+            startTime: Date.now(),
+            totalGames: 0,
+            totalPlayTime: 0,
+            averageGameDuration: 0
+        };
 
         // Timer management
         let timerInterval = null;
@@ -1083,6 +1418,9 @@
                 const dataToSave = {
                     players: players,
                     courts: courts,
+                    gameHistory: gameHistory,
+                    playerStats: playerStats,
+                    sessionStats: sessionStats,
                     timestamp: Date.now()
                 };
                 localStorage.setItem('badmintonClubData', JSON.stringify(dataToSave));
@@ -1103,6 +1441,24 @@
                     if (parsedData.players) {
                         players = parsedData.players;
                         console.log('✅ Loaded saved player data');
+                    }
+                    
+                    // Load statistics data
+                    if (parsedData.gameHistory) {
+                        gameHistory = parsedData.gameHistory;
+                        console.log('✅ Loaded game history');
+                    }
+                    
+                    if (parsedData.playerStats) {
+                        playerStats = parsedData.playerStats;
+                        console.log('✅ Loaded player statistics');
+                    }
+                    
+                    if (parsedData.sessionStats) {
+                        sessionStats = { ...sessionStats, ...parsedData.sessionStats };
+                        // Reset session start time to current session
+                        sessionStats.startTime = Date.now();
+                        console.log('✅ Loaded session statistics');
                     }
                     
                     // Reset courts (don't persist games across sessions)
@@ -1145,17 +1501,20 @@
             // If no saved data, create default players
             console.log('🆕 Creating default player data');
             
-            // Add intermediate players (11 players - updated)
+            // Add intermediate players (14 players - updated)
             const intermediatePlayerNames = [
-                'Mohsin Yasin',
-                'Awais',
-                'Shaheryar Afroze',
-                'Ali BIN ARSHAD',
-                'Arslan Rafiq',
+                'Ali',
+                'Arslan Rafique',
+                'Arslan Shahid',
                 'Asad',
+                'Awais',
                 'Ghazanfar',
-                'Hamid Jan',
+                'Hamid',
+                'Mohsin',
                 'Mavia',
+                'Najam Saqib',
+                'Shehryar',
+                'Umair Masood',
                 'Usman',
                 'Waqas'
             ];
@@ -1170,31 +1529,26 @@
                 });
             });
 
-            // Add beginner players (23 players - updated with full phone numbers)
+            // Add beginner players (18 players - updated)
             const beginnerPlayerNames = [
-                'Moid',
-                'Muhammad Khizar',
-                'HM',
-                '+1 (343) 988-0245',
-                '+1 (343) 999-2247',
-                '+1 (416) 319-3817',
-                '+1 (514) 995-8939',
-                '+1 (613) 298-5451',
-                '+1 (613) 299-3159',
-                '+1 (613) 413-4170',
-                '+1 (613) 413-5563',
-                '+1 (613) 513-4953',
-                '+1 (613) 761-0152',
-                '+1 (613) 864-1844',
-                '+1 (613) 890-4942',
-                '+1 (613) 890-9456',
-                '+1 (613) 914-8481',
-                '+1 (613) 986-5423',
-                '+1 (647) 760-1986',
-                '+1 (873) 288-4800',
-                '+1 (902) 989-4918',
-                '+1 (905) 462-7420',
-                'Guest Player'
+                'Abdul Aziz',
+                'Abrar',
+                'Aditya',
+                'Amarnath',
+                'Amir',
+                'Anas',
+                'Ankur',
+                'Danial',
+                'Haider',
+                'Imran',
+                'Karthik',
+                'Khizar',
+                'Mohiuddin',
+                'Paritosh',
+                'Rizwan',
+                'Saad',
+                'Srinandni',
+                'Vignesh'
             ];
 
             beginnerPlayerNames.forEach((name, index) => {
@@ -1567,39 +1921,15 @@
                    (availableIntermediate + availableBeginner >= 4);
         }
 
-        // Get players with queue priority
+        // Get players based on queue priority (first-come, first-served)
         function getRandomPlayers(playersList, count) {
-            const preferredNames = ['Mohsin Yasin', 'Mavia', 'Ali BIN ARSHAD', 'Asad'];
-            const biasChance = 0.75; // 75% chance to select preferred players
-            
-            // Sort players by queue time (oldest first) - this is the queue system
+            // Sort players by queue time (oldest first) - this is the fair queue system
             const sortedByQueue = [...playersList].sort((a, b) => a.queueTimestamp - b.queueTimestamp);
             
-            // Separate preferred and other players (maintaining queue order)
-            const preferredPlayers = sortedByQueue.filter(p => preferredNames.includes(p.name));
-            const otherPlayers = sortedByQueue.filter(p => !preferredNames.includes(p.name));
-            
-            
-            // If we don't have enough preferred players, or random chance says no bias
-            if (preferredPlayers.length < count || Math.random() > biasChance) {
-                return sortedByQueue.slice(0, count);
-            }
-            
-            // Use biased selection but still respect queue order within groups
-            let selectedPlayers = [];
-            
-            // First, select preferred players (in queue order)
-            const maxPreferredToSelect = Math.min(count, preferredPlayers.length);
-            selectedPlayers.push(...preferredPlayers.slice(0, maxPreferredToSelect));
-            
-            // Fill remaining slots with other players (in queue order)
-            const remainingSlots = count - selectedPlayers.length;
-            if (remainingSlots > 0) {
-                selectedPlayers.push(...otherPlayers.slice(0, remainingSlots));
-            }
+            // Select the first 'count' players from the queue
+            const selectedPlayers = sortedByQueue.slice(0, count);
             
             console.log(`Selected players: ${selectedPlayers.map(p => p.name).join(', ')}`);
-            console.log(`Preferred players selected: ${selectedPlayers.filter(p => preferredNames.includes(p.name)).length}/${count}`);
             
             return selectedPlayers;
         }
@@ -1615,6 +1945,49 @@
 
             console.log(`=== GAME ENDING ON COURT ${courtId} ===`);
             console.log(`Players finishing: ${court.players.map(p => p.name).join(', ')}`);
+
+            // Record game in history
+            const gameRecord = {
+                id: `game_${Date.now()}`,
+                courtId: courtId,
+                players: court.players.map(p => ({ name: p.name, level: p.level })),
+                duration: finalTime,
+                startTime: court.startTime ? court.startTime - (court.elapsedTime || 0) : Date.now() - finalTime,
+                endTime: Date.now(),
+                timestamp: Date.now()
+            };
+            
+            gameHistory.unshift(gameRecord); // Add to beginning of array
+            
+            // Keep only last 50 games to prevent memory issues
+            if (gameHistory.length > 50) {
+                gameHistory = gameHistory.slice(0, 50);
+            }
+
+            // Update session statistics
+            sessionStats.totalGames++;
+            sessionStats.totalPlayTime += finalTime;
+            sessionStats.averageGameDuration = sessionStats.totalPlayTime / sessionStats.totalGames;
+
+            // Update player statistics
+            court.players.forEach(player => {
+                if (!playerStats[player.name]) {
+                    playerStats[player.name] = {
+                        gamesPlayed: 0,
+                        totalPlayTime: 0,
+                        averageGameDuration: 0,
+                        lastPlayed: null,
+                        level: player.level
+                    };
+                }
+                
+                const stats = playerStats[player.name];
+                stats.gamesPlayed++;
+                stats.totalPlayTime += finalTime;
+                stats.averageGameDuration = stats.totalPlayTime / stats.gamesPlayed;
+                stats.lastPlayed = Date.now();
+                stats.level = player.level; // Update level in case it changed
+            });
 
             // Show game summary
             const playerNames = court.players.map(p => p.name).join(', ');
@@ -1636,6 +2009,7 @@
             renderPlayers();
             renderCourts();
             updateStats();
+            updateStatsDashboard(); // Update statistics after game ends
             
             // Sync court end game to Firebase
             console.log('🏸 Syncing court end game to Firebase');
@@ -1878,6 +2252,9 @@
             const dataToSave = {
                 players: players,
                 courts: courts, // Add courts to Firebase sync
+                gameHistory: gameHistory,
+                playerStats: playerStats,
+                sessionStats: sessionStats,
                 lastUpdated: Date.now(),
                 updatedBy: currentUserId
             };
@@ -1961,6 +2338,24 @@
                 if (firebaseData.players.intermediate && firebaseData.players.beginner) {
                     players = firebaseData.players;
                     
+                    // Load statistics data from Firebase
+                    if (firebaseData.gameHistory) {
+                        gameHistory = firebaseData.gameHistory;
+                        console.log('✅ Loaded game history from Firebase');
+                    }
+                    
+                    if (firebaseData.playerStats) {
+                        playerStats = firebaseData.playerStats;
+                        console.log('✅ Loaded player stats from Firebase');
+                    }
+                    
+                    if (firebaseData.sessionStats) {
+                        sessionStats = { ...sessionStats, ...firebaseData.sessionStats };
+                        // Reset session start time to current session
+                        sessionStats.startTime = Date.now();
+                        console.log('✅ Loaded session stats from Firebase');
+                    }
+                    
                     // Update courts from Firebase if available
                     if (firebaseData.courts && Array.isArray(firebaseData.courts)) {
                         console.log('🏸 Syncing court data from Firebase');
@@ -2014,6 +2409,218 @@
                 console.log('⚠️ No valid players data in Firebase response');
             }
         }
+
+        // Calculate estimated wait time for a player
+        function calculateWaitTime(player) {
+            const availableIntermediate = players.intermediate.filter(p => p.status === 'available');
+            const availableBeginner = players.beginner.filter(p => p.status === 'available');
+            const allAvailable = [...availableIntermediate, ...availableBeginner];
+            
+            // Sort by queue timestamp to get position
+            const sortedQueue = allAvailable.sort((a, b) => a.queueTimestamp - b.queueTimestamp);
+            const playerPosition = sortedQueue.findIndex(p => p.id === player.id) + 1;
+            
+            if (playerPosition === 0) return { position: 0, estimate: '0 min', class: 'short' };
+            
+            // Calculate based on:
+            // - Current games in progress and their remaining time
+            // - Average game duration
+            // - Number of courts available
+            
+            const occupiedCourts = courts.filter(c => c.occupied).length;
+            const availableCourts = courts.length - occupiedCourts;
+            
+            // If courts are available, player could be assigned immediately
+            if (availableCourts > 0 && playerPosition <= availableCourts * 4) {
+                return { position: playerPosition, estimate: '< 1 min', class: 'short' };
+            }
+            
+            // Estimate based on average game duration and queue position
+            const avgGameDuration = sessionStats.averageGameDuration || 15 * 60 * 1000; // Default 15 minutes
+            const gamesAhead = Math.ceil((playerPosition - (availableCourts * 4)) / 4);
+            const estimatedWaitMs = gamesAhead * avgGameDuration;
+            
+            const estimatedMinutes = Math.ceil(estimatedWaitMs / (60 * 1000));
+            
+            let estimate, cssClass;
+            if (estimatedMinutes <= 5) {
+                estimate = `${estimatedMinutes} min`;
+                cssClass = 'short';
+            } else if (estimatedMinutes <= 15) {
+                estimate = `${estimatedMinutes} min`;
+                cssClass = 'medium';
+            } else {
+                estimate = `${estimatedMinutes} min`;
+                cssClass = 'long';
+            }
+            
+            return { position: playerPosition, estimate: estimate, class: cssClass };
+        }
+
+        // Update statistics dashboard
+        function updateStatsDashboard() {
+            // Update session overview
+            document.getElementById('totalGamesCompleted').textContent = sessionStats.totalGames;
+            document.getElementById('totalPlayTime').textContent = formatTime(sessionStats.totalPlayTime);
+            document.getElementById('avgGameDuration').textContent = formatTime(sessionStats.averageGameDuration);
+            
+            const sessionDuration = Date.now() - sessionStats.startTime;
+            document.getElementById('sessionDuration').textContent = formatTime(sessionDuration);
+            
+            // Update court utilization
+            updateCourtUtilization();
+            
+            // Update player statistics
+            updatePlayerStatistics();
+            
+            // Update recent games
+            updateRecentGames();
+            
+            // Update wait times
+            updateWaitTimes();
+        }
+
+        // Update court utilization display
+        function updateCourtUtilization() {
+            const container = document.getElementById('courtUtilization');
+            const sessionDuration = Date.now() - sessionStats.startTime;
+            
+            let html = '';
+            courts.forEach(court => {
+                let usageTime = 0;
+                
+                // Calculate usage time for this court
+                gameHistory.forEach(game => {
+                    if (game.courtId === court.id) {
+                        usageTime += game.duration;
+                    }
+                });
+                
+                // Add current game time if court is occupied
+                if (court.occupied && court.startTime) {
+                    usageTime += Date.now() - court.startTime;
+                } else if (court.occupied && court.elapsedTime) {
+                    usageTime += court.elapsedTime;
+                }
+                
+                const usagePercent = sessionDuration > 0 ? Math.round((usageTime / sessionDuration) * 100) : 0;
+                
+                html += `
+                    <div class="court-usage-bar">
+                        <div class="court-usage-label">Court ${court.id}</div>
+                        <div class="court-usage-progress">
+                            <div class="court-usage-fill" style="width: ${Math.min(usagePercent, 100)}%"></div>
+                        </div>
+                        <div class="court-usage-percent">${usagePercent}%</div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // Update player statistics display
+        function updatePlayerStatistics() {
+            const container = document.getElementById('playerStatsContainer');
+            const filter = document.getElementById('playerStatsFilter').value;
+            
+            // Get filtered player stats
+            let filteredStats = Object.entries(playerStats);
+            
+            if (filter === 'intermediate') {
+                filteredStats = filteredStats.filter(([name, stats]) => stats.level === 'intermediate');
+            } else if (filter === 'beginner') {
+                filteredStats = filteredStats.filter(([name, stats]) => stats.level === 'beginner');
+            }
+            
+            // Sort by games played (descending)
+            filteredStats.sort((a, b) => b[1].gamesPlayed - a[1].gamesPlayed);
+            
+            let html = '';
+            if (filteredStats.length === 0) {
+                html = '<div style="text-align: center; color: #6c757d; padding: 20px;">No games played yet</div>';
+            } else {
+                filteredStats.slice(0, 10).forEach(([name, stats]) => {
+                    html += `
+                        <div class="player-stat-row">
+                            <div class="player-stat-name">${name}</div>
+                            <div class="player-stat-value">${stats.gamesPlayed} games (${formatTime(stats.averageGameDuration)} avg)</div>
+                        </div>
+                    `;
+                });
+            }
+            
+            container.innerHTML = html;
+        }
+
+        // Update recent games display
+        function updateRecentGames() {
+            const container = document.getElementById('recentGamesContainer');
+            
+            let html = '';
+            if (gameHistory.length === 0) {
+                html = '<div style="text-align: center; color: #6c757d; padding: 20px;">No games completed yet</div>';
+            } else {
+                gameHistory.slice(0, 5).forEach(game => {
+                    const timeAgo = Math.floor((Date.now() - game.timestamp) / (60 * 1000));
+                    const timeAgoText = timeAgo < 1 ? 'Just now' : `${timeAgo} min ago`;
+                    
+                    html += `
+                        <div class="recent-game-item">
+                            <div class="recent-game-info">
+                                <div class="recent-game-court">Court ${game.courtId} - ${timeAgoText}</div>
+                                <div class="recent-game-players">${game.players.map(p => p.name).join(', ')}</div>
+                            </div>
+                            <div class="recent-game-duration">${formatTime(game.duration)}</div>
+                        </div>
+                    `;
+                });
+            }
+            
+            container.innerHTML = html;
+        }
+
+        // Update wait times display
+        function updateWaitTimes() {
+            const container = document.getElementById('waitTimeContainer');
+            
+            const availableIntermediate = players.intermediate.filter(p => p.status === 'available');
+            const availableBeginner = players.beginner.filter(p => p.status === 'available');
+            const allAvailable = [...availableIntermediate, ...availableBeginner];
+            
+            if (allAvailable.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #6c757d; padding: 20px;">No players waiting</div>';
+                return;
+            }
+            
+            // Sort by queue timestamp
+            const sortedQueue = allAvailable.sort((a, b) => a.queueTimestamp - b.queueTimestamp);
+            
+            let html = '';
+            sortedQueue.forEach((player, index) => {
+                const waitInfo = calculateWaitTime(player);
+                
+                html += `
+                    <div class="wait-time-item">
+                        <div class="wait-time-player">
+                            <div class="wait-time-position">${waitInfo.position}</div>
+                            <span>${player.name} (${player.level})</span>
+                        </div>
+                        <div class="wait-time-estimate ${waitInfo.class}">${waitInfo.estimate}</div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // Add event listener for player stats filter
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterSelect = document.getElementById('playerStatsFilter');
+            if (filterSelect) {
+                filterSelect.addEventListener('change', updatePlayerStatistics);
+            }
+        });
 
         // Modified save function that uses Firebase
         function savePlayersDataWithSync() {
@@ -2190,18 +2797,13 @@
             }
         }
 
-        // Check if any of the preferred players are assigned (likely app users)
+        // Send notification to all assigned players
         function checkForPlayerTurn(selectedPlayers) {
-            const preferredNames = ['Mohsin', 'Mavia', 'Ali', 'Asad'];
-            const selectedPreferred = selectedPlayers.filter(p => 
-                preferredNames.some(name => p.name.toLowerCase().includes(name.toLowerCase()))
-            );
-            
-            if (selectedPreferred.length > 0) {
-                const names = selectedPreferred.map(p => p.name).join(', ');
+            if (selectedPlayers.length > 0) {
+                const names = selectedPlayers.map(p => p.name).join(', ');
                 sendNotification(
-                    '🎯 Your Turn to Play!',
-                    `${names} - You've been assigned to a court!`,
+                    '🎯 Game Assignment!',
+                    `Players assigned to court: ${names}`,
                     { type: 'player_turn', players: names }
                 );
             }
@@ -2396,7 +2998,7 @@
                 setTimeout(() => switchTab('courts'), 100);
             }
         }
-        
+
         // Close modal when clicking outside
         window.onclick = function(event) {
             const modal = document.getElementById('manualAssignmentModal');
