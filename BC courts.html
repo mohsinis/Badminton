@@ -1755,6 +1755,7 @@
 
             renderPlayers();
             renderCourts(); // Re-render courts to update button states
+            updateStats(); // Update statistics to reflect check-in changes
             updateWaitTimes(); // Update queue display
             updateCheckinHelper();
             savePlayersDataWithSync();
@@ -2123,6 +2124,7 @@
 
             renderPlayers();
             renderCourts(); // Re-render courts to update button states
+            updateStats(); // Update statistics to reflect check-in changes
             updateWaitTimes();
             updateCheckinHelper();
             savePlayersDataWithSync();
@@ -2492,10 +2494,15 @@
         function updateStats() {
             const totalPresent = players.intermediate.filter(p => p.status !== 'absent').length + 
                                players.beginner.filter(p => p.status !== 'absent').length;
-            const totalCheckedIn = players.intermediate.filter(p => p.status === 'available' && p.checkedIn).length + 
-                                 players.beginner.filter(p => p.status === 'available' && p.checkedIn).length;
+            
+            // Count all checked-in players regardless of status (available or playing)
+            const totalCheckedIn = players.intermediate.filter(p => p.checkedIn).length + 
+                                 players.beginner.filter(p => p.checkedIn).length;
+            
             const activeGames = courts.filter(c => c.occupied).length;
             const availableCourts = courts.filter(c => !c.occupied).length;
+
+            console.log(`🔍 updateStats: Int checked-in=${players.intermediate.filter(p => p.checkedIn).length}, Beg checked-in=${players.beginner.filter(p => p.checkedIn).length}, Total=${totalCheckedIn}`);
 
             // Show checked-in count instead of just present
             document.getElementById('totalPlayers').textContent = totalCheckedIn + ' checked in';
