@@ -1745,8 +1745,16 @@
                 console.log(`${player.name} checked in`);
                 showConnectionStatus(`${player.name} checked in`);
             }
+            
+            // Debug: Log current checked-in players
+            const checkedInPlayers = [...players.intermediate, ...players.beginner]
+                .filter(p => p.status === 'available' && p.checkedIn)
+                .map(p => p.name);
+            console.log(`🔍 Currently checked in players: ${checkedInPlayers.join(', ')} (${checkedInPlayers.length} total)`);
+            
 
             renderPlayers();
+            renderCourts(); // Re-render courts to update button states
             updateWaitTimes(); // Update queue display
             updateCheckinHelper();
             savePlayersDataWithSync();
@@ -2027,6 +2035,7 @@
             }
             
             renderPlayers();
+            renderCourts(); // Re-render courts to update button states
             updateStats();
             updateCheckinHelper();
             savePlayersDataWithSync(); // Save after attendance change
@@ -2088,7 +2097,7 @@
             });
 
             renderPlayers();
-            renderCourts();
+            renderCourts(); // Re-render courts to update button states
             updateWaitTimes();
             updateCheckinHelper();
             savePlayersDataWithSync();
@@ -2202,11 +2211,16 @@
         function canAssignPlayers(courtId = null) {
             const availableIntermediate = players.intermediate.filter(p => p.status === 'available' && p.checkedIn).length;
             const availableBeginner = players.beginner.filter(p => p.status === 'available' && p.checkedIn).length;
+            const total = availableIntermediate + availableBeginner;
+            
+            console.log(`🔍 canAssignPlayers: Int=${availableIntermediate}, Beg=${availableBeginner}, Total=${total}`);
             
             // All courts can use either level
             // Also allow mixed games when individual levels don't have 4 players
-            return availableIntermediate >= 4 || availableBeginner >= 4 || 
-                   (availableIntermediate + availableBeginner >= 4);
+            const canAssign = availableIntermediate >= 4 || availableBeginner >= 4 || total >= 4;
+            console.log(`🔍 canAssignPlayers result: ${canAssign}`);
+            
+            return canAssign;
         }
 
         // Get players based on queue priority (first-come, first-served)
