@@ -1162,7 +1162,7 @@
 
         <div class="stats">
                 <div class="stat-card">
-                    <strong>Total Players:</strong> <span id="totalPlayers">34</span>
+                    <strong>Checked In:</strong> <span id="totalPlayers">0</span>
                 </div>
                 <div class="stat-card">
                     <strong>Available Courts:</strong> <span id="availableCourts">4</span>
@@ -1785,6 +1785,31 @@
             }
         }
 
+        // Voice announcement for game end
+        function announceGameEnd(courtId, playerNames, gameDuration) {
+            if ('speechSynthesis' in window) {
+                const announcement = `Game completed on Court ${courtId}. Thank you ${playerNames.join(', ')} for playing! Game duration: ${gameDuration}.`;
+                const utterance = new SpeechSynthesisUtterance(announcement);
+                utterance.rate = 0.8;
+                utterance.volume = 0.8;
+                utterance.pitch = 1.0;
+                
+                // Try to use a clear voice
+                const voices = speechSynthesis.getVoices();
+                const englishVoice = voices.find(voice => 
+                    voice.lang.startsWith('en') && (voice.name.includes('Google') || voice.name.includes('Microsoft'))
+                );
+                if (englishVoice) {
+                    utterance.voice = englishVoice;
+                }
+                
+                speechSynthesis.speak(utterance);
+                console.log('🔊 Game End Announced:', announcement);
+            } else {
+                console.log('🔇 Speech synthesis not supported');
+            }
+        }
+
         // Add new player
         function addPlayer() {
             const name = document.getElementById('newPlayerName').value.trim();
@@ -2291,9 +2316,13 @@
                 stats.level = player.level; // Update level in case it changed
             });
 
+            // Voice announcement for game end
+            const playerNames = court.players.map(p => p.name);
+            announceGameEnd(courtId, playerNames, gameTimeFormatted);
+
             // Show game summary
-            const playerNames = court.players.map(p => p.name).join(', ');
-            const summaryMessage = `🏸 Game Complete!\n\nCourt ${courtId}\nPlayers: ${playerNames}\nGame Duration: ${gameTimeFormatted}\n\nGreat game everyone! 🎉`;
+            const playerNamesString = playerNames.join(', ');
+            const summaryMessage = `🏸 Game Complete!\n\nCourt ${courtId}\nPlayers: ${playerNamesString}\nGame Duration: ${gameTimeFormatted}\n\nGreat game everyone! 🎉`;
             
             alert(summaryMessage);
 
@@ -2463,10 +2492,13 @@
         function updateStats() {
             const totalPresent = players.intermediate.filter(p => p.status !== 'absent').length + 
                                players.beginner.filter(p => p.status !== 'absent').length;
+            const totalCheckedIn = players.intermediate.filter(p => p.status === 'available' && p.checkedIn).length + 
+                                 players.beginner.filter(p => p.status === 'available' && p.checkedIn).length;
             const activeGames = courts.filter(c => c.occupied).length;
             const availableCourts = courts.filter(c => !c.occupied).length;
 
-            document.getElementById('totalPlayers').textContent = totalPresent + ' present';
+            // Show checked-in count instead of just present
+            document.getElementById('totalPlayers').textContent = totalCheckedIn + ' checked in';
             document.getElementById('activeGames').textContent = activeGames;
             document.getElementById('availableCourts').textContent = availableCourts;
         }
